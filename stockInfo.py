@@ -88,7 +88,7 @@ def generateMovingAverageDictionaryForAllStocksByDate(date, MA = 20, extraDays =
 	
 	MADaysPricesCopy = MADaysPrices.copy()
 	for i in MADaysPricesCopy:
-		if(len(MADaysPrices[i]) != (MA + extraDays - 1)):
+		if(len(MADaysPrices[i]) != (MA + extraDays - 1)):	# stocks not open in any workday should be lack in the list
 			del MADaysPrices[i]
 			continue
 		for j in range(0, extraDays):
@@ -100,7 +100,7 @@ def generateMovingAverageDictionaryForAllStocksByDate(date, MA = 20, extraDays =
 
 
 
-def updateStockPricesDatabase(fromDate=datetime.datetime(2018, 1, 1)):
+def updateStockPricesDatabase(fromDate=datetime.datetime(2014, 1, 1)):
 	toDate = datetime.datetime.now()
 	
 	print("downloading stock prices back to %d/%02d/%02d" % (fromDate.year, fromDate.month, fromDate.day))
@@ -113,8 +113,9 @@ def updateStockPricesDatabase(fromDate=datetime.datetime(2018, 1, 1)):
 	
 	
 	if(toDate.date() == datetime.datetime.now().date()):
-		print("toDate changed")
-		toDate = toDate - relativedelta(days=1)
+		if(datetime.datetime.now().hour <= 17):	# today's stock prices be released after 1700
+			print("toDate changed")
+			toDate = toDate - relativedelta(days=1)
 	date = toDate
 	
 
@@ -278,7 +279,7 @@ def generateStockPricesDictionaryByDate(date):
 		while os.stat(dataFile).st_size <= 100:
 			date = date - relativedelta(days=1)
 			dataFile = databasePath + "%d%02d%02dprice.json" % (date.year, date.month, date.day)
-		print("take %d/%02d/%02d" % (date.year, date.month, date.day))
+		print("take %d/%02d/%02d to generate dict" % (date.year, date.month, date.day))
 
 	with open(dataFile, 'r') as f:
 		prices = json.load(f)
@@ -310,10 +311,14 @@ def listAllStocksProfitsByDates(date1, date2, threshold=20):
 
 if __name__ == "__main__":
 	
-	updateStockPricesDatabase(fromDate=datetime.datetime(2013, 1, 1))
+	#updateStockPricesDatabase(fromDate=datetime.datetime(2014, 1, 1))
 	
 	
 	#listAllStocksProfitsByDates(datetime.datetime(2019, 8, 11), datetime.datetime(2019, 9, 11), 30)
+	
+
+	d = generateMovingAverageDictionaryForAllStocksByDate(datetime.datetime.now())
+	print(d['2330'])
 	
 	'''
 	while True:

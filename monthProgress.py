@@ -107,7 +107,8 @@ def findStocksWithStrictlyIncreasingMonthlyAveragedRevenue(m, n):
 			progressYoY = (monthRevenue[0] - monthRevenue[len(monthRevenue)-1]) * 100 / monthRevenue[len(monthRevenue)-1]
 			
 			result.append([stockIdStr, progress, progressYoY])
-	
+
+	print("%d stocks found with strictly increasing revenue with M=%d, N=%d" % (len(result), m, n))
 	return result	# list of ['2330', '23.332', YoY]
 
 def filtering(stockList, stockDictByDate, price=0, volume=0, dyield=0, peratio=0, pbratio=0, revenue=0, YoY=0):
@@ -194,6 +195,7 @@ def filtering(stockList, stockDictByDate, price=0, volume=0, dyield=0, peratio=0
 				if(stock[2] < YoY):
 					stockList.remove(stock)
 
+	print("%d stocks found after filtering" % (len(stockList)))
 	return stockList
 
 def filterUsingMA(stockList, dateOfMA, MA=20, extraDays=2, shouldBeStrictlyIncreasing=False, interval=0):
@@ -206,16 +208,23 @@ def filterUsingMA(stockList, dateOfMA, MA=20, extraDays=2, shouldBeStrictlyIncre
 	for stock in stockListCopy:
 		strictlyIncreasing = True
 		if(shouldBeStrictlyIncreasing):
-			a = all(maList[stock[0]][i] >= maList[stock[0]][i+1] for i in range(0, extraDays-1))
-			b = d[stock[0]].price >= maList[stock[0]][0]
-			strictlyIncreasing = a and b
-
+			try:	# stocks not open in any workday should be lack in maList
+				a = all(maList[stock[0]][i] >= maList[stock[0]][i+1] for i in range(0, extraDays-1))
+				b = d[stock[0]].price >= maList[stock[0]][0]
+				strictlyIncreasing = a and b
+			
+			except KeyError:
+				stockList.remove(stock)
+				continue
+	
 		if(not strictlyIncreasing):
 			stockList.remove(stock)
 			continue
+		
 	
-		try:	# may have key error, stock id not found in maList
+		try:	# stocks not open in any workday should be lack in maList
 			progress = (maList[stock[0]][0] - maList[stock[0]][extraDays-1]) * 100 / maList[stock[0]][extraDays-1]
+
 		except KeyError:
 			stockList.remove(stock)
 			continue
@@ -231,6 +240,7 @@ def filterUsingMA(stockList, dateOfMA, MA=20, extraDays=2, shouldBeStrictlyIncre
 		stock.append(maList[stock[0]][0])
 		stock.append(progress)
 
+	print("%d stocks found after MA filter" % (len(stockList)))
 	return stockList	# ['2330', growth, YoY, MA at buy date, MA increase]
 
 
@@ -301,10 +311,10 @@ def prediction(M, N, buyDate=datetime.datetime.now(),
 	
 	while True:
 		buyDatePrices = stockInfo.generateStockPricesDictionaryByDate(buyDate)
-		if(buyDatePrices == None):
+		if(buyDatePrices == None):	# specific date stock price report not released yet
 			buyDate = buyDate - relativedelta(days=1)
 		else:
-			print("take %d/%02d/%02d" % (buyDate.year, buyDate.month, buyDate.day))
+			print("take %d/%02d/%02d in prediction" % (buyDate.year, buyDate.month, buyDate.day))
 			break
 	
 	buyDate = buyDatePrices['2330'].date
@@ -349,19 +359,10 @@ elif(sys.argv[1] == '1'):
 	sellDatePrices = stockInfo.generateStockPricesDictionaryByDate(sellDate)
 
 
-	#result = filtering(result, d, 10.0, 2000, dyield = (4.5, 6), peratio = (9.0, 16.0), pbratio = 2, revenue = (10, 80)) # best from 2019-08 monthly revenue, M=4, N=5
-
-	print(len(result))
-	
 	result = filtering(result, buyDatePrices, 10.0, 1000, dyield=(0.1, 20), peratio=(0.1, 100), revenue=(10, 100), YoY=(10, 100)) # best from 2019-06 monthly revenue, M=3, N=4
 	
-	print(len(result))
 	
 	result = filterUsingMA(result, buyDate, 20, 2, True, interval=(0.6, 2.5))
-
-	#result = filtering(result, d, 10.0, 1000, revenue=(10, 30)) # M=3, N=3
-
-	#result = filtering(result, d, 10.0, 2000, dyield=(3, 100), peratio=(10, 30)) # 2019-04 M=3, N=4
 
 	evaluation(result, buyDatePrices, sellDatePrices)
 
@@ -391,4 +392,4 @@ elif(sys.argv[1] == '3'):
 			   MA=20,
 			   extraDays=2,
 			   shouldBeStrictlyIncreasing=True,
-			   interval=(0.6, 2.5))
+			   interval=(0.6, 25))

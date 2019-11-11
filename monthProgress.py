@@ -1,0 +1,394 @@
+import pandas as pd
+import numpy as np
+import datetime
+from dateutil.relativedelta import relativedelta
+import pickle
+import os
+import sys
+import time
+import stockInfo
+import matplotlib.pyplot as plt
+
+M = 3	# Take M latest months to make average
+N = 4	# Filter stocks whose average revenue increase more than N months in a row
+
+monthlyReportFolder = 'monthlyReport/'
+monthlyReportFile = ['siireport', 'otcreport']
+
+global revenue
+revenue = {}
+global startDate
+global endDate
+
+def generateMonthlyRevenueToDictionary(M, N, end=datetime.datetime.now()):
+	
+	now = end
+	numberOfMonths = M + N - 1
+	count = 0
+	
+	while count <= numberOfMonths:
+		for reportFile in monthlyReportFile:
+			filename = monthlyReportFolder + reportFile + '%d%02d.csv' % (now.year, now.month)
+			print(filename)
+			
+			# determine if the report is intact
+			if(os.stat(filename).st_size > 1000):
+				df = pd.read_csv(filename)
+				df = df[['公司代號', '公司名稱', '營業收入-當月營收', '產業別']]
+				
+				for i in range(0, len(df)):
+					id = str(df.loc[i]['公司代號'])
+					
+					# filter out construction stocks
+					if(df.loc[i]['產業別'] == '建材營造'):
+						continue
+					if(id in revenue):
+						revenue[id].append(df.loc[i]['營業收入-當月營收'])
+					else:
+						revenue[id] = [df.loc[i]['營業收入-當月營收']]
+
+			else:
+				print("No content, breaking out. Duration to %d-%02d" % (end.year, end.month-1))
+				break
+
+		count = count + 1
+		
+		if(count == numberOfMonths):	# after extracting monthly revenue for the M&N, extract that from the previous year of the month for YoY calculation
+			now = end - relativedelta(years=1)
+		else:
+			now = now - relativedelta(months=1)
+
+
+	with open('monthProgress.pkl', 'wb') as f:
+		pickle.dump([revenue, end, M, N], f)
+		print("cache monthProgress.pkl generated")
+
+
+def readMonthlyRevenueFromDictionary():
+	global revenue
+	global endDate
+	
+	with open('monthProgress.pkl', 'rb') as f:
+		revenue, endDate, M, N = pickle.load(f)
+
+	print("Revenue data until %d-%02d\nM = %d N = %d\n" % (endDate.year, endDate.month, M, N))
+
+
+
+def findStocksWithStrictlyIncreasingMonthlyAveragedRevenue(m, n):
+
+	result = []
+	
+	for stockId in range(0, 10000):
+		stockIdStr = "%04d" % (stockId)
+	
+		if(not(stockIdStr in revenue)):
+			continue
+		
+		l = len(revenue[stockIdStr])
+		if(l < (m+n)):	# filter out no enough data to be averaged
+			continue
+		
+		monthRevenue = revenue[stockIdStr]
+		monthRevenue = np.array(monthRevenue)
+		averagedRevenue = []
+		for i in range(0, n):
+			averagedRevenue.append(monthRevenue[i:i+m].mean())
+		
+
+		# identify strictly increasing
+		strictlyIncreasing = all(averagedRevenue[i] >= averagedRevenue[i+1] for i in range(0, len(averagedRevenue)-1))
+		
+		# identify positive YoY
+		positiveYoY = monthRevenue[0] > monthRevenue[len(monthRevenue)-1]
+		
+		if(strictlyIncreasing and positiveYoY and averagedRevenue[0] != 0):
+			progress = (averagedRevenue[0] - averagedRevenue[n-1]) * 100 / averagedRevenue[n-1]
+			progressYoY = (monthRevenue[0] - monthRevenue[len(monthRevenue)-1]) * 100 / monthRevenue[len(monthRevenue)-1]
+			
+			result.append([stockIdStr, progress, progressYoY])
+	
+	return result	# list of ['2330', '23.332', YoY]
+
+def filtering(stockList, stockDictByDate, price=0, volume=0, dyield=0, peratio=0, pbratio=0, revenue=0, YoY=0):
+	
+	stockListCopy = stockList.copy()
+	for stock in stockListCopy:
+		if(stock[0] not in stockDictByDate or stockDictByDate[stock[0]].price == 0):
+			stockList.remove(stock)
+
+
+	if(price != 0):
+		stockListCopy = stockList.copy()
+		if(type(price) == tuple or type(price) == list):
+			for stock in stockListCopy:
+				if(not(price[0] <= stockDictByDate[stock[0]].price and stockDictByDate[stock[0]].price <= price[1])):
+					stockList.remove(stock)
+		else:
+			for stock in stockListCopy:
+				if(stockDictByDate[stock[0]].price < price):
+					stockList.remove(stock)
+
+	if(volume != 0):
+		stockListCopy = stockList.copy()
+		if(type(volume) == tuple or type(volume) == list):
+			for stock in stockListCopy:
+				if(not(volume[0] <= stockDictByDate[stock[0]].volume and stockDictByDate[stock[0]].volume <= volume[1])):
+					stockList.remove(stock)
+		else:
+			for stock in stockListCopy:
+				if(stockDictByDate[stock[0]].volume < volume):
+					stockList.remove(stock)
+
+	if(dyield != 0):
+		stockListCopy = stockList.copy()
+		if(type(dyield) == tuple or type(dyield) == list):
+			for stock in stockListCopy:
+				if(not(dyield[0] <= stockDictByDate[stock[0]].dyield and stockDictByDate[stock[0]].dyield <= dyield[1])):
+					stockList.remove(stock)
+		else:
+			for stock in stockListCopy:
+				if(stockDictByDate[stock[0]].dyield < dyield):
+					stockList.remove(stock)
+
+	if(peratio != 0):
+		stockListCopy = stockList.copy()
+		if(type(peratio) == tuple or type(peratio) == list):
+			for stock in stockListCopy:
+				if(not(peratio[0] <= stockDictByDate[stock[0]].peratio and stockDictByDate[stock[0]].peratio <= peratio[1])):
+					stockList.remove(stock)
+		else:
+			for stock in stockListCopy:
+				if(stockDictByDate[stock[0]].peratio > peratio):
+					stockList.remove(stock)
+
+	if(pbratio != 0):
+		stockListCopy = stockList.copy()
+		if(type(pbratio) == tuple or type(pbratio) == list):
+			for stock in stockListCopy:
+				if(not(pbratio[0] <= stockDictByDate[stock[0]].pbratio and stockDictByDate[stock[0]].pbratio <= pbratio[1])):
+					stockList.remove(stock)
+		else:
+			for stock in stockListCopy:
+				if(stockDictByDate[stock[0]].pbratio > pbratio):
+					stockList.remove(stock)
+	if(revenue != 0):
+		stockListCopy = stockList.copy()
+		if(type(revenue) == tuple or type(revenue) == list):
+			for stock in stockListCopy:
+				if(not(revenue[0] <= stock[1] and stock[1] <= revenue[1])):
+					stockList.remove(stock)
+		else:
+			for stock in stockListCopy:
+				if(revenue < stock[1]):
+					stockList.remove(stock)
+
+	if(YoY != 0):
+		stockListCopy = stockList.copy()
+		if(type(YoY) == tuple or type(YoY) == list):
+			for stock in stockListCopy:
+				if(not(YoY[0] <= stock[2] and stock[2] <= YoY[1])):
+					stockList.remove(stock)
+		else:
+			for stock in stockListCopy:
+				if(stock[2] < YoY):
+					stockList.remove(stock)
+
+	return stockList
+
+def filterUsingMA(stockList, dateOfMA, MA=20, extraDays=2, shouldBeStrictlyIncreasing=False, interval=0):
+	maList = stockInfo.generateMovingAverageDictionaryForAllStocksByDate(date=dateOfMA, MA=MA, extraDays=extraDays)
+	
+	
+	d =  stockInfo.generateStockPricesDictionaryByDate(dateOfMA)
+	
+	stockListCopy = stockList.copy()
+	for stock in stockListCopy:
+		strictlyIncreasing = True
+		if(shouldBeStrictlyIncreasing):
+			a = all(maList[stock[0]][i] >= maList[stock[0]][i+1] for i in range(0, extraDays-1))
+			b = d[stock[0]].price >= maList[stock[0]][0]
+			strictlyIncreasing = a and b
+
+		if(not strictlyIncreasing):
+			stockList.remove(stock)
+			continue
+	
+		try:	# may have key error, stock id not found in maList
+			progress = (maList[stock[0]][0] - maList[stock[0]][extraDays-1]) * 100 / maList[stock[0]][extraDays-1]
+		except KeyError:
+			stockList.remove(stock)
+			continue
+
+		if(interval != 0):
+			if(type(interval) == tuple or type(interval) == list):
+				if(not(interval[0] <= progress and progress <= interval[1])):
+					stockList.remove(stock)
+			else:
+				if(progress < interval):
+					stockList.remove(stock)
+
+		stock.append(maList[stock[0]][0])
+		stock.append(progress)
+
+	return stockList	# ['2330', growth, YoY, MA at buy date, MA increase]
+
+
+def evaluation(stockList, buyDate, sellDate):
+	averageProfit = 0
+	count = 0
+	
+	d1 = buyDate['2330'].date
+	d2 = sellDate['2330'].date
+	
+	x = []
+	y = []
+	c = []
+	
+	cache =[]
+
+	print("\n獲利\t殖利\t本益\t淨比\t營收\tYoY\t代號\t公司\t股價%d/%02d/%02d\t股價%d/%02d/%02d\t成交量\tMA20" % (d1.year, d1.month, d1.day, d2.year, d2.month, d2.day))
+	print("-----------------------------------------------------------------------")
+	
+	for stock in stockList:
+		
+		try:
+			profit = (sellDate[stock[0]].price - buyDate[stock[0]].price) * 100 / buyDate[stock[0]].price
+		except:
+			continue
+		
+		averageProfit = averageProfit + profit
+		count = count + 1
+		print("%3d%%\t%3.2f%%\t%5.2f\t%4.2f\t%3d%%\t%3d%%\t%s\t%6s\t%7.2f\t%7.2f\t%10d\t%.2f\t%.3f%%" % (profit, buyDate[stock[0]].dyield, buyDate[stock[0]].peratio, buyDate[stock[0]].pbratio, stock[1], stock[2], stock[0], buyDate[stock[0]].name, buyDate[stock[0]].price, sellDate[stock[0]].price, buyDate[stock[0]].volume, stock[3], stock[4]))
+		
+		cache.append( "%3d%%\t%3.2f%%\t%5.2f\t%4.2f\t%3d%%\t%3d%%\t%s\t%6s\t%7.2f\t%7.2f\t%10d\t%.2f\t%.3f%%" % (profit, buyDate[stock[0]].dyield, buyDate[stock[0]].peratio, buyDate[stock[0]].pbratio, stock[1], stock[2], stock[0], buyDate[stock[0]].name, buyDate[stock[0]].price, sellDate[stock[0]].price, buyDate[stock[0]].volume, stock[3], stock[4]))
+		
+		x.append(stock[1])
+		y.append(profit)
+		c.append(buyDate[stock[0]].price)
+	
+	# 0050 evaluation
+	print("%3d%%\t\t\t\t\t\t%s\t%6s\t%7.2f\t%7.2f\t%10d\t\t" % (((sellDate['0050'].price - buyDate['0050'].price) * 100 / buyDate['0050'].price), '0050', buyDate['0050'].name, buyDate['0050'].price, sellDate['0050'].price, buyDate['0050'].volume))
+		  
+		  
+	averageProfit = averageProfit / count
+	print("\n%d stocks found\nAverage Profit: %.1f%%\n" % (count, averageProfit))
+
+
+	with open('cache.pkl', 'wb') as f:
+		pickle.dump(cache, f)
+
+
+def prediction(M, N, buyDate=datetime.datetime.now(),
+			   price=10,
+			   volume=10,
+			   dyield=(0.1, 3),
+			   peratio=(0.1, 100),
+			   pbratio=0,
+			   revenue=(10, 100),
+			   YoY=(10, 100),
+			   MA=20,
+			   extraDays=2,
+			   shouldBeStrictlyIncreasing=True,
+			   interval=(0.8, 20)):
+	
+	generateMonthlyRevenueToDictionary(M=M, N=N, end=buyDate-relativedelta(months=1))
+	readMonthlyRevenueFromDictionary()
+
+	
+	result = findStocksWithStrictlyIncreasingMonthlyAveragedRevenue(M, N)
+
+	
+	while True:
+		buyDatePrices = stockInfo.generateStockPricesDictionaryByDate(buyDate)
+		if(buyDatePrices == None):
+			buyDate = buyDate - relativedelta(days=1)
+		else:
+			print("take %d/%02d/%02d" % (buyDate.year, buyDate.month, buyDate.day))
+			break
+	
+	buyDate = buyDatePrices['2330'].date
+	
+	result = filtering(result, buyDatePrices, price=price, volume=volume, dyield=dyield, peratio=peratio, pbratio=pbratio, revenue=revenue, YoY=YoY)
+
+	result = filterUsingMA(result, buyDate, MA=MA, extraDays=extraDays, shouldBeStrictlyIncreasing=shouldBeStrictlyIncreasing, interval=interval)
+	
+	
+	# showing filtering result
+	count = 0
+	
+	print("殖利\t本益\t淨比\t營收\tYoY\t代號\t公司\t股價%d/%02d/%02d\t成交量\tMA20" % (buyDate.year, buyDate.month, buyDate.day))
+	print("-----------------------------------------------------------------------")
+	
+	for stock in result:
+		
+		count = count + 1
+		print("%3.2f%%\t%5.2f\t%4.2f\t%3d%%\t%3d%%\t%s\t%6s\t%7.2f\t%10d\t%.2f\t%.3f%%" % (buyDatePrices[stock[0]].dyield, buyDatePrices[stock[0]].peratio, buyDatePrices[stock[0]].pbratio, stock[1], stock[2], stock[0], buyDatePrices[stock[0]].name, buyDatePrices[stock[0]].price, buyDatePrices[stock[0]].volume, stock[3], stock[4]))
+
+			
+	print("\n%d stocks found\n" % (count))
+
+
+
+
+
+if(sys.argv[1] == '0'):
+	generateMonthlyRevenueToDictionary(M=M, N=N, end=datetime.datetime(year=2019, month=2, day=1))
+
+elif(sys.argv[1] == '1'):
+	
+
+	readMonthlyRevenueFromDictionary()
+	
+	result = findStocksWithStrictlyIncreasingMonthlyAveragedRevenue(M, N)
+	
+	buyDate = datetime.datetime(endDate.year, endDate.month+1, 11)
+	sellDate = datetime.datetime(endDate.year, endDate.month+2, 5)
+
+	buyDatePrices = stockInfo.generateStockPricesDictionaryByDate(buyDate)
+	sellDatePrices = stockInfo.generateStockPricesDictionaryByDate(sellDate)
+
+
+	#result = filtering(result, d, 10.0, 2000, dyield = (4.5, 6), peratio = (9.0, 16.0), pbratio = 2, revenue = (10, 80)) # best from 2019-08 monthly revenue, M=4, N=5
+
+	print(len(result))
+	
+	result = filtering(result, buyDatePrices, 10.0, 1000, dyield=(0.1, 20), peratio=(0.1, 100), revenue=(10, 100), YoY=(10, 100)) # best from 2019-06 monthly revenue, M=3, N=4
+	
+	print(len(result))
+	
+	result = filterUsingMA(result, buyDate, 20, 2, True, interval=(0.6, 2.5))
+
+	#result = filtering(result, d, 10.0, 1000, revenue=(10, 30)) # M=3, N=3
+
+	#result = filtering(result, d, 10.0, 2000, dyield=(3, 100), peratio=(10, 30)) # 2019-04 M=3, N=4
+
+	evaluation(result, buyDatePrices, sellDatePrices)
+
+
+elif(sys.argv[1] == '2'):
+	with open('cache.pkl', 'rb') as f:
+		cache = pickle.load(f)
+
+
+	with open('cache.csv', 'w', encoding='utf-8') as f:
+		for i in cache:
+			f.write(i+"\n")
+
+
+# M=4, N=5, buy date 11, sell date 5, price > 10, volume > 1000, dyield 0.1-3,
+# peratio 0.1-100, revenue 10-100, YoY 10-100.
+# Rank by YoY, if MA20 progress > 0.8 (maybe just filter it), then take it.
+
+elif(sys.argv[1] == '3'):
+	prediction(M, N,
+			   price=10.0,
+			   volume=1000,
+			   dyield=(0.1, 20),
+			   peratio=(0.1, 100),
+			   revenue=(10, 100),
+			   YoY=(10, 100),
+			   MA=20,
+			   extraDays=2,
+			   shouldBeStrictlyIncreasing=True,
+			   interval=(0.6, 2.5))

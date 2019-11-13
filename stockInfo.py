@@ -4,6 +4,7 @@ from dateutil.relativedelta import relativedelta
 import requests
 import json
 import os
+import sys
 import time
 import pickle
 
@@ -311,7 +312,8 @@ def listAllStocksProfitsByDates(date1, date2, threshold=20):
 
 if __name__ == "__main__":
 	
-	#updateStockPricesDatabase(fromDate=datetime.datetime(2014, 1, 1))
+	if(sys.argv[1] == 'd'):
+		updateStockPricesDatabase()
 	
 	
 	#listAllStocksProfitsByDates(datetime.datetime(2019, 8, 11), datetime.datetime(2019, 9, 11), 30)

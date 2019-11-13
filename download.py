@@ -2,6 +2,7 @@ import pandas as pd
 import requests
 from io import StringIO
 import os
+import sys
 import time
 import datetime
 from dateutil.relativedelta import relativedelta
@@ -47,5 +48,7 @@ def downloadMonthlyReportUntil(year=2015):
 
 
 if __name__ == "__main__":
-
-	downloadMonthlyReportUntil(2015)
+	
+	if(sys.argv[1] == 'd'):
+		downloadMonthlyReportUntil(2015)
+		

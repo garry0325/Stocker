@@ -317,13 +317,8 @@ if __name__ == "__main__":
 	
 
 	elif(sys.argv[1] == '0'):
-		listAllStocksProfitsByDates(datetime.datetime(2019, 8, 8), datetime.datetime(2019, 9, 5), 40)
+		listAllStocksProfitsByDates(datetime.datetime(2018, 5, 11), datetime.datetime(2018, 6, 5), 40)
 
-	elif(sys.argv[1] == '1'):
-		d = generateStockPricesDictionaryByDate(datetime.datetime(2019, 7, 11))
-		d['6547'].summerize()
-
-	
 	'''
 	while True:
 		c = input("stock id: ")

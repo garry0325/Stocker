@@ -43,7 +43,7 @@ def generateMonthlyRevenueToDictionary(M, N, end=datetime.datetime.now()):
 					if(df.loc[i]['產業別'] == '建材營造'):
 						continue
 					if(id in revenue):
-						r = df.loc[i]['營業收入-當月營收']
+						r = df.loc[i]['營業收入-當月營收']	# store the value first because there are two subsequent task regarding to that value(if & append), making it more efficient
 						if(r != 0):
 							revenue[id].append(r)
 					else:
@@ -93,6 +93,7 @@ def findStocksWithStrictlyIncreasingMonthlyAveragedRevenue(m, n):
 		if(l < (m+n)):	# filter out no enough data to be averaged
 			continue
 		
+		# calculate average
 		monthRevenue = revenue[stockIdStr]
 		monthRevenue = np.array(monthRevenue)
 		averagedRevenue = []
@@ -106,15 +107,19 @@ def findStocksWithStrictlyIncreasingMonthlyAveragedRevenue(m, n):
 		# identify positive YoY
 		positiveYoY = monthRevenue[0] > monthRevenue[len(monthRevenue)-1]
 		
+		# identify MoM
+		positiveMoM = monthRevenue[0] > monthRevenue[1]
+		
 		
 		if(strictlyIncreasing and positiveYoY and averagedRevenue[0] != 0):
 			progress = (averagedRevenue[0] - averagedRevenue[n-1]) * 100 / averagedRevenue[n-1]
 			progressYoY = (monthRevenue[0] - monthRevenue[len(monthRevenue)-1]) * 100 / monthRevenue[len(monthRevenue)-1]
+			progressMoM = (monthRevenue[0] - monthRevenue[1]) * 100 / monthRevenue[1]
 			
-			result.append([stockIdStr, progress, progressYoY])
+			result.append([stockIdStr, progress, progressYoY, progressMoM])
 
 	print("%d stocks found with strictly increasing revenue with M=%d, N=%d" % (len(result), m, n))
-	return result	# list of ['2330', '23.332', YoY]
+	return result	# list of ['2330', '23.332', YoY, MoM]
 
 def filtering(stockList, stockDictByDate, price=0, volume=0, dyield=0, peratio=0, pbratio=0, revenue=0, YoY=0):
 	
@@ -246,7 +251,7 @@ def filterUsingMA(stockList, dateOfMA, MA=20, extraDays=2, shouldBeStrictlyIncre
 		stock.append(progress)
 
 	print("%d stocks found after MA filter" % (len(stockList)))
-	return stockList	# ['2330', growth, YoY, MA at buy date, MA increase]
+	return stockList	# ['2330', growth, YoY, MoM, MA on buy date, MA increase]
 
 
 def evaluation(stockList, buyDate, sellDate):
@@ -262,7 +267,7 @@ def evaluation(stockList, buyDate, sellDate):
 	
 	cache =[]
 
-	print("\n獲利\t殖利\t本益\t淨比\t營收\tYoY\t代號\t公司\t股價%d/%02d/%02d\t股價%d/%02d/%02d\t成交量\tMA20" % (d1.year, d1.month, d1.day, d2.year, d2.month, d2.day))
+	print("\n獲利\t殖利\t本益\t淨比\t營收\tYoY\tMoM\t代號\t公司\t股價%d/%02d/%02d\t股價%d/%02d/%02d\t成交量\tMA20" % (d1.year, d1.month, d1.day, d2.year, d2.month, d2.day))
 	print("-----------------------------------------------------------------------")
 	
 	for stock in stockList:
@@ -274,9 +279,8 @@ def evaluation(stockList, buyDate, sellDate):
 		
 		averageProfit = averageProfit + profit
 		count = count + 1
-		print("%3d%%\t%3.2f%%\t%5.2f\t%4.2f\t%3d%%\t%3d%%\t%s\t%6s\t%7.2f\t%7.2f\t%10d\t%.2f\t%.3f%%" % (profit, buyDate[stock[0]].dyield, buyDate[stock[0]].peratio, buyDate[stock[0]].pbratio, stock[1], stock[2], stock[0], buyDate[stock[0]].name, buyDate[stock[0]].price, sellDate[stock[0]].price, buyDate[stock[0]].volume, stock[3], stock[4]))
-		
-		cache.append( "%3d%%\t%3.2f%%\t%5.2f\t%4.2f\t%3d%%\t%3d%%\t%s\t%6s\t%7.2f\t%7.2f\t%10d\t%.2f\t%.3f%%" % (profit, buyDate[stock[0]].dyield, buyDate[stock[0]].peratio, buyDate[stock[0]].pbratio, stock[1], stock[2], stock[0], buyDate[stock[0]].name, buyDate[stock[0]].price, sellDate[stock[0]].price, buyDate[stock[0]].volume, stock[3], stock[4]))
+		print("%3d%%\t%3.2f%%\t%5.2f\t%4.2f\t%3d%%\t%3d%%\t%3d%%\t%s\t%6s\t%7.2f\t%7.2f\t%10d\t%.2f\t%.3f%%" % (profit, buyDate[stock[0]].dyield, buyDate[stock[0]].peratio, buyDate[stock[0]].pbratio, stock[1], stock[2], stock[3], stock[0], buyDate[stock[0]].name, buyDate[stock[0]].price, sellDate[stock[0]].price, buyDate[stock[0]].volume, stock[4], stock[5]))
+		cache.append("%3d%%\t%3.2f%%\t%5.2f\t%4.2f\t%3d%%\t%3d%%\t%3d%%\t%s\t%6s\t%7.2f\t%7.2f\t%10d\t%.2f\t%.3f%%" % (profit, buyDate[stock[0]].dyield, buyDate[stock[0]].peratio, buyDate[stock[0]].pbratio, stock[1], stock[2], stock[3], stock[0], buyDate[stock[0]].name, buyDate[stock[0]].price, sellDate[stock[0]].price, buyDate[stock[0]].volume, stock[4], stock[5]))
 
 		
 		x.append(stock[1])
@@ -333,13 +337,13 @@ def prediction(M, N, buyDate=datetime.datetime.now(),
 	# showing filtering result
 	count = 0
 	
-	print("殖利\t本益\t淨比\t營收\tYoY\t代號\t公司\t股價%d/%02d/%02d\t成交量\tMA20" % (buyDate.year, buyDate.month, buyDate.day))
+	print("殖利\t本益\t淨比\t營收\tYoY\tMoM\t代號\t公司\t股價%d/%02d/%02d\t成交量\tMA20" % (buyDate.year, buyDate.month, buyDate.day))
 	print("-----------------------------------------------------------------------")
 	
 	for stock in result:
 		
 		count = count + 1
-		print("%3.2f%%\t%5.2f\t%4.2f\t%3d%%\t%3d%%\t%s\t%6s\t%7.2f\t%10d\t%.2f\t%.3f%%" % (buyDatePrices[stock[0]].dyield, buyDatePrices[stock[0]].peratio, buyDatePrices[stock[0]].pbratio, stock[1], stock[2], stock[0], buyDatePrices[stock[0]].name, buyDatePrices[stock[0]].price, buyDatePrices[stock[0]].volume, stock[3], stock[4]))
+		print("%3.2f%%\t%5.2f\t%4.2f\t%3d%%\t%3d%%\t%3d%%\t%s\t%6s\t%7.2f\t%10d\t%.2f\t%.3f%%" % (buyDatePrices[stock[0]].dyield, buyDatePrices[stock[0]].peratio, buyDatePrices[stock[0]].pbratio, stock[1], stock[2], stock[3], stock[0], buyDatePrices[stock[0]].name, buyDatePrices[stock[0]].price, buyDatePrices[stock[0]].volume, stock[4], stock[5]))
 
 			
 	print("\n%d stocks found\n" % (count))
@@ -364,10 +368,10 @@ if __name__ == "__main__":
 		sellDatePrices = stockInfo.generateStockPricesDictionaryByDate(sellDate)
 
 
-		result = filtering(result, buyDatePrices, 10.0, 0, dyield=0, peratio=0, revenue=0, YoY=0) # best from 2019-06 monthly revenue, M=3, N=4
+		result = filtering(result, buyDatePrices, 10.0, 1000, dyield=(0.1, 20), peratio=(0.1, 100), revenue=(10, 100), YoY=(10, 100)) # best from 2019-06 monthly revenue, M=3, N=4
 		
 		
-		result = filterUsingMA(result, buyDate, 20, 2, False)
+		result = filterUsingMA(result, buyDate, 20, 2, True, interval=(0.6, 25))
 
 		evaluation(result, buyDatePrices, sellDatePrices)
 

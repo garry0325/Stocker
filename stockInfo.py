@@ -92,8 +92,14 @@ def generateMovingAverageDictionaryForAllStocksByDate(date, MA = 20, extraDays =
 		if(len(MADaysPrices[i]) != (MA + extraDays - 1)):	# stocks not open in any workday should be lack in the list
 			del MADaysPrices[i]
 			continue
-		for j in range(0, extraDays):
-			MADaysPrices[i][j] = sum(MADaysPrices[i][j:j+MA]) / MA
+		
+		try:
+			for j in range(0, extraDays):
+				MADaysPrices[i][j] = sum(MADaysPrices[i][j:j+MA]) / MA
+		except TypeError:
+			del MADaysPrices[i]
+			continue
+
 		MADaysPrices[i] = MADaysPrices[i][:extraDays]
 
 
@@ -317,7 +323,7 @@ if __name__ == "__main__":
 	
 
 	elif(sys.argv[1] == '0'):
-		listAllStocksProfitsByDates(datetime.datetime(2018, 5, 11), datetime.datetime(2018, 6, 5), 40)
+		listAllStocksProfitsByDates(datetime.datetime(2019, 7, 11), datetime.datetime(2019, 8, 5), 20)
 
 	'''
 	while True:

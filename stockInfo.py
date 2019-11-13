@@ -315,12 +315,14 @@ if __name__ == "__main__":
 	if(sys.argv[1] == 'd'):
 		updateStockPricesDatabase()
 	
-	
-	#listAllStocksProfitsByDates(datetime.datetime(2019, 8, 11), datetime.datetime(2019, 9, 11), 30)
-	
 
-	d = generateMovingAverageDictionaryForAllStocksByDate(datetime.datetime.now())
-	print(d['2330'])
+	elif(sys.argv[1] == '0'):
+		listAllStocksProfitsByDates(datetime.datetime(2019, 8, 8), datetime.datetime(2019, 9, 5), 40)
+
+	elif(sys.argv[1] == '1'):
+		d = generateStockPricesDictionaryByDate(datetime.datetime(2019, 7, 11))
+		d['6547'].summerize()
+
 	
 	'''
 	while True:

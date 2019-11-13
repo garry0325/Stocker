@@ -43,9 +43,13 @@ def generateMonthlyRevenueToDictionary(M, N, end=datetime.datetime.now()):
 					if(df.loc[i]['產業別'] == '建材營造'):
 						continue
 					if(id in revenue):
-						revenue[id].append(df.loc[i]['營業收入-當月營收'])
+						r = df.loc[i]['營業收入-當月營收']
+						if(r != 0):
+							revenue[id].append(r)
 					else:
-						revenue[id] = [df.loc[i]['營業收入-當月營收']]
+						r = df.loc[i]['營業收入-當月營收']
+						if(r != 0):
+							revenue[id] = [r]
 
 			else:
 				print("No content, breaking out. Duration to %d-%02d" % (end.year, end.month-1))
@@ -58,7 +62,7 @@ def generateMonthlyRevenueToDictionary(M, N, end=datetime.datetime.now()):
 		else:
 			now = now - relativedelta(months=1)
 
-
+				
 	with open('monthProgress.pkl', 'wb') as f:
 		pickle.dump([revenue, end, M, N], f)
 		print("cache monthProgress.pkl generated")
@@ -101,6 +105,7 @@ def findStocksWithStrictlyIncreasingMonthlyAveragedRevenue(m, n):
 		
 		# identify positive YoY
 		positiveYoY = monthRevenue[0] > monthRevenue[len(monthRevenue)-1]
+		
 		
 		if(strictlyIncreasing and positiveYoY and averagedRevenue[0] != 0):
 			progress = (averagedRevenue[0] - averagedRevenue[n-1]) * 100 / averagedRevenue[n-1]
@@ -272,6 +277,7 @@ def evaluation(stockList, buyDate, sellDate):
 		print("%3d%%\t%3.2f%%\t%5.2f\t%4.2f\t%3d%%\t%3d%%\t%s\t%6s\t%7.2f\t%7.2f\t%10d\t%.2f\t%.3f%%" % (profit, buyDate[stock[0]].dyield, buyDate[stock[0]].peratio, buyDate[stock[0]].pbratio, stock[1], stock[2], stock[0], buyDate[stock[0]].name, buyDate[stock[0]].price, sellDate[stock[0]].price, buyDate[stock[0]].volume, stock[3], stock[4]))
 		
 		cache.append( "%3d%%\t%3.2f%%\t%5.2f\t%4.2f\t%3d%%\t%3d%%\t%s\t%6s\t%7.2f\t%7.2f\t%10d\t%.2f\t%.3f%%" % (profit, buyDate[stock[0]].dyield, buyDate[stock[0]].peratio, buyDate[stock[0]].pbratio, stock[1], stock[2], stock[0], buyDate[stock[0]].name, buyDate[stock[0]].price, sellDate[stock[0]].price, buyDate[stock[0]].volume, stock[3], stock[4]))
+
 		
 		x.append(stock[1])
 		y.append(profit)
@@ -340,56 +346,56 @@ def prediction(M, N, buyDate=datetime.datetime.now(),
 
 
 
+if __name__ == "__main__":
+
+	if(sys.argv[1] == '0'):
+		generateMonthlyRevenueToDictionary(M=M, N=N, end=datetime.datetime(year=2019, month=6, day=1))
+
+	elif(sys.argv[1] == '1'):
+		
+		readMonthlyRevenueFromDictionary()
+		
+		result = findStocksWithStrictlyIncreasingMonthlyAveragedRevenue(M, N)
+		
+		buyDate = datetime.datetime(endDate.year, endDate.month+1, 11)
+		sellDate = datetime.datetime(endDate.year, endDate.month+2, 5)
+
+		buyDatePrices = stockInfo.generateStockPricesDictionaryByDate(buyDate)
+		sellDatePrices = stockInfo.generateStockPricesDictionaryByDate(sellDate)
 
 
-if(sys.argv[1] == '0'):
-	generateMonthlyRevenueToDictionary(M=M, N=N, end=datetime.datetime(year=2019, month=2, day=1))
+		result = filtering(result, buyDatePrices, 10.0, 0, dyield=0, peratio=0, revenue=0, YoY=0) # best from 2019-06 monthly revenue, M=3, N=4
+		
+		
+		result = filterUsingMA(result, buyDate, 20, 2, False)
 
-elif(sys.argv[1] == '1'):
-	
-
-	readMonthlyRevenueFromDictionary()
-	
-	result = findStocksWithStrictlyIncreasingMonthlyAveragedRevenue(M, N)
-	
-	buyDate = datetime.datetime(endDate.year, endDate.month+1, 11)
-	sellDate = datetime.datetime(endDate.year, endDate.month+2, 5)
-
-	buyDatePrices = stockInfo.generateStockPricesDictionaryByDate(buyDate)
-	sellDatePrices = stockInfo.generateStockPricesDictionaryByDate(sellDate)
+		evaluation(result, buyDatePrices, sellDatePrices)
 
 
-	result = filtering(result, buyDatePrices, 10.0, 1000, dyield=(0.1, 20), peratio=(0.1, 100), revenue=(10, 100), YoY=(10, 100)) # best from 2019-06 monthly revenue, M=3, N=4
-	
-	
-	result = filterUsingMA(result, buyDate, 20, 2, True, interval=(0.6, 2.5))
-
-	evaluation(result, buyDatePrices, sellDatePrices)
+	elif(sys.argv[1] == '2'):
+		with open('cache.pkl', 'rb') as f:
+			cache = pickle.load(f)
 
 
-elif(sys.argv[1] == '2'):
-	with open('cache.pkl', 'rb') as f:
-		cache = pickle.load(f)
+		with open('cache.csv', 'w', encoding='utf-8') as f:
+			for i in cache:
+				f.write(i+"\n")
 
 
-	with open('cache.csv', 'w', encoding='utf-8') as f:
-		for i in cache:
-			f.write(i+"\n")
+	# M=4, N=5, buy date 11, sell date 5, price > 10, volume > 1000, dyield 0.1-3,
+	# peratio 0.1-100, revenue 10-100, YoY 10-100.
+	# Rank by YoY, if MA20 progress > 0.8 (maybe just filter it), then take it.
 
+	elif(sys.argv[1] == '3'):
+		prediction(M, N,
+				   price=10.0,
+				   volume=1000,
+				   dyield=(0.1, 20),
+				   peratio=(0.1, 100),
+				   revenue=(10, 100),
+				   YoY=(10, 100),
+				   MA=20,
+				   extraDays=2,
+				   shouldBeStrictlyIncreasing=True,
+				   interval=(0.6, 25))
 
-# M=4, N=5, buy date 11, sell date 5, price > 10, volume > 1000, dyield 0.1-3,
-# peratio 0.1-100, revenue 10-100, YoY 10-100.
-# Rank by YoY, if MA20 progress > 0.8 (maybe just filter it), then take it.
-
-elif(sys.argv[1] == '3'):
-	prediction(M, N,
-			   price=10.0,
-			   volume=1000,
-			   dyield=(0.1, 20),
-			   peratio=(0.1, 100),
-			   revenue=(10, 100),
-			   YoY=(10, 100),
-			   MA=20,
-			   extraDays=2,
-			   shouldBeStrictlyIncreasing=True,
-			   interval=(0.6, 25))

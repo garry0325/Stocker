@@ -156,9 +156,6 @@ def updateStockPricesDatabase(fromDate=datetime.datetime(2014, 1, 1)):
 					# name, close, open, high, low, volume, offset, amount, trades, yield, peratio, pbratio, cat
 					prepare = list(stockItem[i] for i in [1, 8, 5, 6, 7, 10, 2, 4, 3])
 					
-					if(prepare[1] == '--'):
-						prepare[1] = 0
-					
 					if(stockItem[9] == '<p style= color:green>-</p>'):
 						offset = -1 * float(stockItem[10])
 					else:
@@ -174,7 +171,7 @@ def updateStockPricesDatabase(fromDate=datetime.datetime(2014, 1, 1)):
 
 				except:
 					#print("error %s %s %d/%02d/%02d tse stock price" % (stockItem[0], stockItem[1], date.year, date.month, date.day))
-					prepare = [stockItem[1], prepare[1], 0, 0, 0, 0, 0, 0, 0]
+					prepare = [stockItem[1], 0, 0, 0, 0, 0, 0, 0, 0]
 					errors = errors + 1
 				
 				prepare = prepare + [0, 0, 0, '上市']
@@ -227,9 +224,6 @@ def updateStockPricesDatabase(fromDate=datetime.datetime(2014, 1, 1)):
 					prepare = list(stockItem[i] for i in [1, 2, 4, 5, 6, 3, 7, 8, 9])
 					prepare[5] = prepare[5].replace(' ', '')
 					
-					if(prepare[1] == '----'):
-						prepare[1] = 0
-					
 					for i in [1, 2, 3, 4]:
 						prepare[i] = float(prepare[i].replace(',', ''))
 					for i in [6, 7, 8]:
@@ -239,7 +233,7 @@ def updateStockPricesDatabase(fromDate=datetime.datetime(2014, 1, 1)):
 
 				except:
 					#print("error %s %s %d/%02d/%02d otc stock price" % (stockItem[0], stockItem[1], date.year, date.month, date.day))
-					prepare = [stockItem[1], prepare[1], 0, 0, 0, 0, 0, 0, 0]
+					prepare = [stockItem[1], 0, 0, 0, 0, 0, 0, 0, 0]
 					errors = errors + 1
 				
 				prepare = prepare + [0, 0, 0, '上櫃']
@@ -321,9 +315,6 @@ if __name__ == "__main__":
 	if(sys.argv[1] == 'd'):
 		updateStockPricesDatabase()
 	
-
-	elif(sys.argv[1] == '0'):
-		listAllStocksProfitsByDates(datetime.datetime(2019, 7, 11), datetime.datetime(2019, 8, 5), 20)
 
 	'''
 	while True:

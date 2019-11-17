@@ -77,5 +77,31 @@ def plotBand(bbandList, stockId):
 
 	plt.show()
 
-bband = calculateBBands(datetime.datetime(2019, 11, 16), trackbackDates=90)
-plotBand(bband, '2330')
+def filterPriceHigherThanUpper(bbandList):
+	bbandListCopy = bbandList.copy()
+	for stockItem in bbandListCopy:
+		if(bbandList[stockItem][0].price <= bbandList[stockItem][0].upper):
+			del bbandList[stockItem]
+
+	print("%d stocks found after filtering out price lower than upper" % (len(bbandList)))
+
+	return bbandList
+
+def filterHighestPriceForDays(bbandList, days=20):
+	bbandListCopy = bbandList.copy()
+	for stockItem in bbandListCopy:
+		highest = True
+		for i in range(1, days):
+			if(bbandList[stockItem][i].price >= bbandList[stockItem][0].price):
+				highest = False
+				break
+
+		if(not highest):
+			del bbandList[stockItem]
+
+	print("%d stocks found after highest price filter" % (len(bbandList)))
+
+date = datetime.datetime(2019, 11, 16)
+bband = calculateBBands(date, trackbackDates=90)
+bband = filterPriceHigherThanUpper(bband)
+bband = filterHighestPriceForDays(bband)

@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import datetime
 from dateutil.relativedelta import relativedelta
 import stockInfo
+from matplotlib.font_manager import FontProperties
+font=FontProperties(fname='/Library/Fonts/Microsoft/MS Gothic.ttf',size=20)
+
 
 global stockDictionary
 stockDict = []
@@ -57,29 +60,6 @@ def calculateBBands(date=datetime.datetime.now(),
 	print("Latest date %d/%02d/%02d" % (latestDate.year, latestDate.month, latestDate.day))
 
 	return bbandList
-
-def plotBand(bbandList, stockId):
-	ma = []
-	upper = []
-	lower = []
-	price = []
-	
-	for i in bbandList[stockId]:
-		price.insert(0, i.price)
-		ma.insert(0, i.MA)
-		upper.insert(0, i.upper)
-		lower.insert(0, i.lower)
-
-	l = range(0, len(ma))
-	plt.figure(figsize=(10, 5))
-	plt.plot(l, price, c='red', linewidth=2.0)
-	plt.plot(l, ma, linewidth=1.5, alpha=0.5)
-	plt.plot(l, upper, linewidth=1.5, alpha=0.5)
-	plt.plot(l, lower, linewidth=1.5, alpha=0.5)
-	plt.xlabel(stockId)
-	plt.ylabel('Price')
-
-	plt.show()
 
 def filterPriceHigherThanUpper(bbandList):
 	bbandListCopy = bbandList.copy()
@@ -138,18 +118,65 @@ def filterByMAandVolume(bbandList, date, duration=5, ratio=2):
 	print("%d stocks found after MA & volume filter" % (len(bbandList)))
 	return bbandList
 
+def plotBBand(bbandList, stockId):
+	ma = []
+	upper = []
+	lower = []
+	price = []
+	
+	for i in bbandList[stockId]:
+		price.insert(0, i.price)
+		ma.insert(0, i.MA)
+		upper.insert(0, i.upper)
+		lower.insert(0, i.lower)
+	
+	volume = []
+	for i in range(len(price)-1, -1, -1):
+		volume.append(stockDict[i][stockId].volume)
+	volume = np.array(volume)
+
+	color = []
+	for i in range(0, len(price)-1):
+		if(price[i] < price[i+1]):
+			color.append('r')
+		elif(price[i] > price[i+1]):
+			color.append('g')
+		else:
+			color.append('y')
+	color.insert(0, 'r')
+	
+	l = range(0, len(ma))
+	plt.figure(figsize=(10, 5))
+	plt.plot(l, price, c='red', linewidth=2.0)
+	plt.plot(l, ma, linewidth=1.5, alpha=0.5)
+	plt.plot(l, upper, linewidth=1.5, alpha=0.5)
+	plt.plot(l, lower, linewidth=1.5, alpha=0.5)
+
+	ylim = plt.gca().get_ylim()
+	ylim = [ylim[0], ylim[1]]
+	ylim[0] = ylim[0] - ((ylim[1] - ylim[0]) * 0.3)
+	volume = volume * (ylim[1] - ylim[0]) / 3 / max(volume) + ylim[0]
+	plt.bar(l, volume, color=color, alpha=0.8)
+	plt.ylim(ylim)
+
+	plt.title(stockId + ' ' + stockDict[0][stockId].name, fontproperties=font)
+	plt.ylabel('Price')
+
+	plt.show()
+
+
 date = datetime.datetime(2019, 11, 16)
 bband = calculateBBands(date, trackbackDates=90)
 bband = filterPriceHigherThanUpper(bband)
 bband = filterHighestPriceForDays(bband)
 bband = filterByMAandVolume(bband, date)
-plotBand(bband, '1103')
+plotBBand(bband, '1103')
 '''
 for i in bband:
 	print(i)
 c = input('show plot (y/n)?')
 if(c == 'y'):
 	for i in bband:
-		plotBand(bband, i)
+		plotBBand(bband, i)
 
 '''

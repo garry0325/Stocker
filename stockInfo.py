@@ -107,7 +107,7 @@ def generateMovingAverageDictionaryForAllStocksByDate(date, MA = 20, extraDays =
 
 
 
-def updateStockPricesDatabase(fromDate=datetime.datetime(2014, 1, 1)):
+def updateStockPricesDatabase(fromDate=datetime.datetime(2013, 1, 1)):
 	toDate = datetime.datetime.now()
 	
 	print("downloading stock prices back to %d/%02d/%02d" % (fromDate.year, fromDate.month, fromDate.day))
@@ -264,9 +264,9 @@ def updateStockPricesDatabase(fromDate=datetime.datetime(2014, 1, 1)):
 
 
 		date = date - relativedelta(days=1)
-		time.sleep(4)
+		time.sleep(5)
 
-def generateStockPricesDictionaryByDate(date):
+def generateStockPricesDictionaryByDate(date, autoCorrectDate=True):
 	databasePath = 'stockPrices/'
 	dataFile = databasePath + "%d%02d%02dprice.json" % (date.year, date.month, date.day)
 	
@@ -277,10 +277,13 @@ def generateStockPricesDictionaryByDate(date):
 
 	if(os.stat(dataFile).st_size <= 100):
 		print("error: %d/%02d/%02d is not weekday" % (date.year, date.month, date.day))
-		while os.stat(dataFile).st_size <= 100:
-			date = date - relativedelta(days=1)
-			dataFile = databasePath + "%d%02d%02dprice.json" % (date.year, date.month, date.day)
-		print("take %d/%02d/%02d to generate dict" % (date.year, date.month, date.day))
+		if(autoCorrectDate):
+			while os.stat(dataFile).st_size <= 100:
+				date = date - relativedelta(days=1)
+				dataFile = databasePath + "%d%02d%02dprice.json" % (date.year, date.month, date.day)
+			print("take %d/%02d/%02d to generate dict" % (date.year, date.month, date.day))
+		else:
+			return None
 
 	with open(dataFile, 'r') as f:
 		prices = json.load(f)

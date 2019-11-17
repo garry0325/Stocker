@@ -27,7 +27,6 @@ def calculateBBands(date=datetime.datetime.now(),
 	day = 1
 	
 	stockList = {}
-	date = datetime.datetime.now()
 	while day <= datesNeeded:
 		stockPrices = stockInfo.generateStockPricesDictionaryByDate(date, autoCorrectDate=False)
 		if(stockPrices != None):
@@ -37,14 +36,18 @@ def calculateBBands(date=datetime.datetime.now(),
 					stockList[stockItem] = np.append(stockList[stockItem], stockPrices[stockItem].price)
 				else:
 					stockList[stockItem] = np.array(stockPrices[stockItem].price)
+		
 			day = day + 1
 		date = date - relativedelta(days=1)
-
 
 	bbandList = {}
 	stockListCopy = stockList.copy()
 	for stockItem in stockListCopy:
-		if(len(stockList[stockItem]) != datesNeeded):
+		try:
+			if(len(stockList[stockItem]) != datesNeeded):
+				del stockList[stockItem]
+				continue
+		except TypeError:	# raises TypeError when using len(ndarray) ndarray has len 1
 			del stockList[stockItem]
 			continue
 
@@ -96,7 +99,7 @@ def filterByMAandVolume(bbandList, date, duration=5, ratio=2):
 		for i in range(0, duration):
 			volume = volume + stockDict[i][stockItem].volume
 		volume = volume / duration
-		if((stockDict[0][stockItem].volume / volume) < ratio):
+		if((stockDict[0][stockItem].volume / volume) < ratio or stockDict[0][stockItem].volume <= 1000 or stockDict[0][stockItem].price <= 10.0):
 			del bbandList[stockItem]
 			continue
 
@@ -117,6 +120,18 @@ def filterByMAandVolume(bbandList, date, duration=5, ratio=2):
 
 	print("%d stocks found after MA & volume filter" % (len(bbandList)))
 	return bbandList
+
+def evaluation(bbandList, buyDate, sellDate):
+	d1 = stockInfo.generateStockPricesDictionaryByDate(buyDate)
+	d2 = stockInfo.generateStockPricesDictionaryByDate(sellDate)
+	
+	averageProfit = 0
+	for stockItem in bbandList:
+		profit = (d2[stockItem].price - d1[stockItem].price) * 100 / d1[stockItem].price
+		averageProfit = averageProfit + profit
+		print("%3d%% %s" % (profit, stockItem))
+
+	print("Average profit: %3d%%" % (averageProfit/len(bbandList)))
 
 def plotBBand(bbandList, stockId):
 	ma = []
@@ -165,13 +180,12 @@ def plotBBand(bbandList, stockId):
 	plt.show()
 
 
-date = datetime.datetime(2019, 11, 16)
+date = datetime.datetime(2019, 11, 17)
 bband = calculateBBands(date, trackbackDates=90)
 bband = filterPriceHigherThanUpper(bband)
 bband = filterHighestPriceForDays(bband)
 bband = filterByMAandVolume(bband, date)
-plotBBand(bband, '1103')
-'''
+
 for i in bband:
 	print(i)
 c = input('show plot (y/n)?')
@@ -179,4 +193,4 @@ if(c == 'y'):
 	for i in bband:
 		plotBBand(bband, i)
 
-'''
+#evaluation(bband, date, datetime.datetime(2019, 3, 29))

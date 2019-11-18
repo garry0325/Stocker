@@ -453,19 +453,6 @@ if __name__ == "__main__":
 			print("%d%02d complete" % (date.year, date.month))
 			date = date - relativedelta(months=1)
 
-			
-
-
-
-	elif(sys.argv[1] == '2'):
-		with open('cache.pkl', 'rb') as f:
-			cache = pickle.load(f)
-
-
-		with open('cache.csv', 'w', encoding='utf-8') as f:
-			for i in cache:
-				f.write(i+"\n")
-
 
 	# M=4, N=5, buy date 11, sell date 5, price > 10, volume > 1000, dyield 0.1-3,
 	# peratio 0.1-100, revenue 10-100, YoY 10-100.

@@ -233,7 +233,7 @@ def updateStockPricesDatabase(fromDate=datetime.datetime(2013, 1, 1)):
 
 				except:
 					#print("error %s %s %d/%02d/%02d otc stock price" % (stockItem[0], stockItem[1], date.year, date.month, date.day))
-					if(prepare[5] == '除權息'):
+					if(prepare[5] == '除權息' or prepare[5] == '除權' or prepare[5] == '除息'):
 						prepare = [stockItem[1], prepare[1], prepare[2], prepare[3], prepare[4], 0, prepare[6], prepare[7], prepare[8]]
 					else:
 						prepare = [stockItem[1], 0, 0, 0, 0, 0, 0, 0, 0]
@@ -321,9 +321,6 @@ if __name__ == "__main__":
 	if(sys.argv[1] == 'd'):
 		updateStockPricesDatabase()
 	
-
-	s = generateStockPricesDictionaryByDate(datetime.datetime(2019, 8, 28))
-	s['3483'].summerize()
 	'''
 	while True:
 		c = input("stock id: ")

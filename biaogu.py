@@ -180,7 +180,7 @@ def plotBBand(bbandList, stockId):
 	plt.show()
 
 
-date = datetime.datetime(2019, 11, 17)
+date = datetime.datetime(2019, 8, 8)
 bband = calculateBBands(date, trackbackDates=90)
 bband = filterPriceHigherThanUpper(bband)
 bband = filterHighestPriceForDays(bband)
@@ -193,4 +193,7 @@ if(c == 'y'):
 	for i in bband:
 		plotBBand(bband, i)
 
-#evaluation(bband, date, datetime.datetime(2019, 3, 29))
+evaluation(bband, date, datetime.datetime(2019, 9, 9))
+
+
+#2421 9946

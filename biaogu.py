@@ -57,9 +57,8 @@ def calculateBBands(date=datetime.datetime.now(),
 			n = stockList[stockItem][i:i+N]
 			mean = n.mean()
 			s = n.std()
-			
+		
 			bbandList[stockItem].append(bband(stockList[stockItem][i], mean, mean + K * s, mean - K * s))
-
 	print("Latest date %d/%02d/%02d" % (latestDate.year, latestDate.month, latestDate.day))
 
 	return bbandList
@@ -180,8 +179,8 @@ def plotBBand(bbandList, stockId):
 	plt.show()
 
 
-date = datetime.datetime(2019, 8, 8)
-bband = calculateBBands(date, trackbackDates=90)
+date = datetime.datetime(2019, 10, 25)
+bband = calculateBBands(date, trackbackDates=180)
 bband = filterPriceHigherThanUpper(bband)
 bband = filterHighestPriceForDays(bband)
 bband = filterByMAandVolume(bband, date)
@@ -193,7 +192,3 @@ if(c == 'y'):
 	for i in bband:
 		plotBBand(bband, i)
 
-evaluation(bband, date, datetime.datetime(2019, 9, 9))
-
-
-#2421 9946

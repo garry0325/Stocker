@@ -304,7 +304,6 @@ def evaluation(stockList, buyDate, sellDate):
 	d1 = buyDate['2330'].date
 	d2 = sellDate['2330'].date
 	
-	cache = ""
 
 	print("\n獲利\t殖利\t本益\t淨比\t營收\tYoY\tMoM\t代號\t公司\t股價%d/%02d/%02d\t股價%d/%02d/%02d\t成交量\tMA20\tMA20Progress" % (d1.year, d1.month, d1.day, d2.year, d2.month, d2.day))
 	print("-----------------------------------------------------------------------")
@@ -319,15 +318,9 @@ def evaluation(stockList, buyDate, sellDate):
 		averageProfit = averageProfit + profit
 		count = count + 1
 		print("%3d%%\t%3.2f%%\t%5.2f\t%4.2f\t%3d%%\t%3d%%\t%3d%%\t%s\t%6s\t%7.2f\t%7.2f\t%10d\t%.2f\t%.3f%%" % (profit, buyDate[stock[0]].dyield, buyDate[stock[0]].peratio, buyDate[stock[0]].pbratio, stock[1], stock[2], stock[3], stock[0], buyDate[stock[0]].name, buyDate[stock[0]].price, sellDate[stock[0]].price, buyDate[stock[0]].volume, stock[4], stock[5]))
-		
-		cache = cache + "%3d%%,%3.2f%%,%5.2f,%4.2f,%3d%%,%3d%%,%3d%%,%s,%6s,%7.2f,%7.2f,%10d,%.2f,%.3f%%,%d%02d\n" % (profit, buyDate[stock[0]].dyield, buyDate[stock[0]].peratio, buyDate[stock[0]].pbratio, stock[1], stock[2], stock[3], stock[0], buyDate[stock[0]].name, buyDate[stock[0]].price, sellDate[stock[0]].price, buyDate[stock[0]].volume, stock[4], stock[5], d1.year, d1.month)
-
-	file = open('data.csv', 'a')
-	file.write(cache)
-	file.close()
 	
 	# 0050 evaluation
-	print("%3d%%\t\t\t\t\t\t%s\t%6s\t%7.2f\t%7.2f\t%10d\t\t" % (((sellDate['0050'].price - buyDate['0050'].price) * 100 / buyDate['0050'].price), '0050', buyDate['0050'].name, buyDate['0050'].price, sellDate['0050'].price, buyDate['0050'].volume))
+	print("%3d%%\t\t\t\t\t\t\t%s\t%6s\t%7.2f\t%7.2f\t%10d\t\t" % (((sellDate['0050'].price - buyDate['0050'].price) * 100 / buyDate['0050'].price), '0050', buyDate['0050'].name, buyDate['0050'].price, sellDate['0050'].price, buyDate['0050'].volume))
 		  
 		  
 	averageProfit = averageProfit / count
@@ -382,12 +375,103 @@ def prediction(M, N, buyDate=datetime.datetime.now(),
 			
 	print("\n%d stocks found\n" % (count))
 
+def evaluateCertainStock(stockIds, buyDate, sellDate=None):
+	if(type(stockIds) != list):
+		stockIds = [stockIds]
+	
+	now = buyDate
+	
+	revenue = {}	# should be initialized in order to generate multiple rounds within an execution
+	for stockItem in stockIds:
+		revenue[stockItem] = []
+	
+	for k in range(0, 3):
+		for reportFile in monthlyReportFile:
+			filename = monthlyReportFolder + reportFile + '%d%02d.csv' % (now.year, now.month)
+			print(filename)
+			
+			# determine if the report is intact
+			if(os.path.exists(filename)):
+				df = pd.read_csv(filename)
+				df = df[['公司代號', '公司名稱', '營業收入-當月營收', '產業別']]
+				
+				
+				for i in range(0, len(df)):
+					id = str(df.loc[i]['公司代號'])
+					if(not(id in stockIds)):
+						continue
+					
+					# not filtering out construction stocks
+					
+					r = df.loc[i]['營業收入-當月營收']
+					revenue[id].append(r)
+		
+			else:
+				now = now - relativedelta(months=1)
+				print("Revenue report not published yet. Take %d%02d" % (now.year, now.month))
+				continue
+
+
+		if(k == 0):
+			now = now - relativedelta(months=1)
+		elif(k == 1):
+			now = now - relativedelta(years=1)
+			now = now + relativedelta(months=1)
+
+	if(sellDate != None):
+		buy = stockInfo.generateStockPricesDictionaryByDate(buyDate)
+		sell = stockInfo.generateStockPricesDictionaryByDate(sellDate)
+		buyMA = stockInfo.generateMovingAverageDictionaryForAllStocksByDate(buyDate, MA=20, extraDays=2)
+
+		print("\n獲利\t殖利\t本益\t淨比\tYoY\tMoM\t代號\t公司\t股價%d/%02d/%02d\t股價%d/%02d/%02d\t成交量\tMA20\tMA20Progress" % (buyDate.year, buyDate.month, buyDate.day, sellDate.year, sellDate.month, sellDate.day))
+		print("-----------------------------------------------------------------------")
+		
+		averageProfit = 0
+		count = 0
+		for stockItem in revenue:
+			try:
+				profit = (sell[stockItem].price - buy[stockItem].price) * 100 / buy[stockItem].price
+				MoM = (revenue[stockItem][0] - revenue[stockItem][1]) * 100 / revenue[stockItem][1]
+				YoY = (revenue[stockItem][0] - revenue[stockItem][2]) * 100 / revenue[stockItem][2]
+				MA = buyMA[stockItem][0]
+				MAProgress = (MA - buyMA[stockItem][1]) * 100 / buyMA[stockItem][1]
+			except:
+				continue
+			
+			averageProfit = averageProfit + profit
+			count = count + 1
+			print("%3d%%\t%3.2f%%\t%5.2f\t%4.2f\t%3d%%\t%3d%%\t%s\t%6s\t%7.2f\t%7.2f\t%10d\t%.2f\t%.3f%%" % (profit, buy[stockItem].dyield, buy[stockItem].peratio, buy[stockItem].pbratio, YoY, MoM, stockItem, buy[stockItem].name, buy[stockItem].price, sell[stockItem].price, buy[stockItem].volume, MA, MAProgress))
+
+		averageProfit = averageProfit / count
+		print("\n%d stocks found\nAverage Profit: %.1f%%\n" % (count, averageProfit))
+
+	else:
+		buy = stockInfo.generateStockPricesDictionaryByDate(buyDate)
+		buyMA = stockInfo.generateMovingAverageDictionaryForAllStocksByDate(buyDate, MA=20, extraDays=2)
+		print("\t殖利\t本益\t淨比\tYoY\tMoM\t代號\t公司\t股價%d/%02d/%02d\t成交量\tMA20\tMA20Progress" % (buyDate.year, buyDate.month, buyDate.day))
+		print("-----------------------------------------------------------------------")
+
+		count = 0
+		for stockItem in revenue:
+			try:
+				MoM = (revenue[stockItem][0] - revenue[stockItem][1]) * 100 / revenue[stockItem][1]
+				YoY = (revenue[stockItem][0] - revenue[stockItem][2]) * 100 / revenue[stockItem][2]
+				MA = buyMA[stockItem][0]
+				MAProgress = (MA - buyMA[stockItem][1]) * 100 / buyMA[stockItem][1]
+			except:
+				continue
+				
+			count = count + 1
+			print("%3d%%\t%3.2f%%\t%5.2f\t%3d%%\t%3d%%\t%s\t%6s\t%7.2f\t%10d\t%.2f\t%.3f%%" % (buy[stockItem].dyield, buy[stockItem].peratio, buy[stockItem].pbratio, YoY, MoM, stockItem, buy[stockItem].name, buy[stockItem].price, buy[stockItem].volume, MA, MAProgress))
+
+		print("%d stocks found\n" % (count))
+
 
 
 if __name__ == "__main__":
 
 	if(sys.argv[1] == '0'):
-		generateMonthlyRevenueToDictionary(M=M, N=N, end=datetime.datetime(year=2017, month=7, day=1))
+		generateMonthlyRevenueToDictionary(M=M, N=N, end=datetime.datetime(year=2019, month=8, day=1))
 
 	elif(sys.argv[1] == '1'):
 		
@@ -471,4 +555,5 @@ if __name__ == "__main__":
 				   shouldBeStrictlyIncreasing=True,
 				   interval=(0.6, 25))
 
-
+	elif(sys.argv[1] == '5'):
+		evaluateCertainStock(['3483', '5876'], datetime.datetime.now())

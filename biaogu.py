@@ -4,7 +4,7 @@ import datetime
 from dateutil.relativedelta import relativedelta
 import stockInfo
 from matplotlib.font_manager import FontProperties
-font=FontProperties(fname='/Library/Fonts/Microsoft/MS Gothic.ttf',size=20)
+font=FontProperties(fname='/users/garry0325/Library/Fonts/TaipeiSansTCBeta-Regular.ttf',size=20)
 
 
 global stockDictionary
@@ -148,7 +148,8 @@ def plotBBand(bbandList, stockId):
 	for i in range(len(price)-1, -1, -1):
 		volume.append(stockDict[i][stockId].volume)
 	volume = np.array(volume)
-
+	lastDayVolume = volume[0]
+	
 	color = []
 	for i in range(0, len(price)-1):
 		if(price[i] < price[i+1]):
@@ -175,11 +176,12 @@ def plotBBand(bbandList, stockId):
 
 	plt.title(stockId + ' ' + stockDict[0][stockId].name, fontproperties=font)
 	plt.ylabel('Price')
+	plt.xlabel('Prc ' + str(price[0]) + ' (' + str(round((price[len(price)-1] - price[len(price)-2]) * 100 / price[len(price)-2], 2)) + '%)\nVol ' + str(lastDayVolume))
 
 	plt.show()
 
 
-date = datetime.datetime(2019, 10, 25)
+date = datetime.datetime(2019, 11, 25)
 bband = calculateBBands(date, trackbackDates=180)
 bband = filterPriceHigherThanUpper(bband)
 bband = filterHighestPriceForDays(bband)

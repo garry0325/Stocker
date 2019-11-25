@@ -388,29 +388,27 @@ def evaluateCertainStock(stockIds, buyDate, sellDate=None):
 	for k in range(0, 3):
 		for reportFile in monthlyReportFile:
 			filename = monthlyReportFolder + reportFile + '%d%02d.csv' % (now.year, now.month)
-			print(filename)
 			
 			# determine if the report is intact
-			if(os.path.exists(filename)):
-				df = pd.read_csv(filename)
-				df = df[['公司代號', '公司名稱', '營業收入-當月營收', '產業別']]
-				
-				
-				for i in range(0, len(df)):
-					id = str(df.loc[i]['公司代號'])
-					if(not(id in stockIds)):
-						continue
-					
-					# not filtering out construction stocks
-					
-					r = df.loc[i]['營業收入-當月營收']
-					revenue[id].append(r)
-		
-			else:
+			while(not os.path.exists(filename)):
 				now = now - relativedelta(months=1)
 				print("Revenue report not published yet. Take %d%02d" % (now.year, now.month))
-				continue
-
+				filename = monthlyReportFolder + reportFile + '%d%02d.csv' % (now.year, now.month)
+			
+			print(filename)
+			
+			df = pd.read_csv(filename)
+			df = df[['公司代號', '公司名稱', '營業收入-當月營收', '產業別']]
+			
+			for i in range(0, len(df)):
+				id = str(df.loc[i]['公司代號'])
+				if(not(id in stockIds)):
+					continue
+				
+				# not filtering out construction stocks
+				
+				r = df.loc[i]['營業收入-當月營收']
+				revenue[id].append(r)
 
 		if(k == 0):
 			now = now - relativedelta(months=1)
@@ -443,12 +441,12 @@ def evaluateCertainStock(stockIds, buyDate, sellDate=None):
 			print("%3d%%\t%3.2f%%\t%5.2f\t%4.2f\t%3d%%\t%3d%%\t%s\t%6s\t%7.2f\t%7.2f\t%10d\t%.2f\t%.3f%%" % (profit, buy[stockItem].dyield, buy[stockItem].peratio, buy[stockItem].pbratio, YoY, MoM, stockItem, buy[stockItem].name, buy[stockItem].price, sell[stockItem].price, buy[stockItem].volume, MA, MAProgress))
 
 		averageProfit = averageProfit / count
-		print("\n%d stocks found\nAverage Profit: %.1f%%\n" % (count, averageProfit))
+		print("\nTotal %d stocks\nAverage Profit: %.1f%%\n" % (count, averageProfit))
 
 	else:
 		buy = stockInfo.generateStockPricesDictionaryByDate(buyDate)
 		buyMA = stockInfo.generateMovingAverageDictionaryForAllStocksByDate(buyDate, MA=20, extraDays=2)
-		print("\t殖利\t本益\t淨比\tYoY\tMoM\t代號\t公司\t股價%d/%02d/%02d\t成交量\tMA20\tMA20Progress" % (buyDate.year, buyDate.month, buyDate.day))
+		print("殖利\t本益\t淨比\tYoY\tMoM\t代號\t公司\t股價%d/%02d/%02d\t成交量\tMA20\tMA20Progress" % (buyDate.year, buyDate.month, buyDate.day))
 		print("-----------------------------------------------------------------------")
 
 		count = 0
@@ -462,9 +460,9 @@ def evaluateCertainStock(stockIds, buyDate, sellDate=None):
 				continue
 				
 			count = count + 1
-			print("%3d%%\t%3.2f%%\t%5.2f\t%3d%%\t%3d%%\t%s\t%6s\t%7.2f\t%10d\t%.2f\t%.3f%%" % (buy[stockItem].dyield, buy[stockItem].peratio, buy[stockItem].pbratio, YoY, MoM, stockItem, buy[stockItem].name, buy[stockItem].price, buy[stockItem].volume, MA, MAProgress))
+			print("%3.2f%%\t%5.2f\t%4.2f\t%3d%%\t%3d%%\t%s\t%6s\t%7.2f\t%10d\t%.2f\t%.3f%%" % (buy[stockItem].dyield, buy[stockItem].peratio, buy[stockItem].pbratio, YoY, MoM, stockItem, buy[stockItem].name, buy[stockItem].price, buy[stockItem].volume, MA, MAProgress))
 
-		print("%d stocks found\n" % (count))
+		print("\nTotal %d stocks\n" % (count))
 
 
 
@@ -556,4 +554,4 @@ if __name__ == "__main__":
 				   interval=(0.6, 25))
 
 	elif(sys.argv[1] == '5'):
-		evaluateCertainStock(['3483', '5876'], datetime.datetime.now())
+		evaluateCertainStock(['1598', '2312', '3437', '9941', '2006', '2103', '2303', '2332', '3147', '5213', '6223'], datetime.datetime(2019, 11, 25))

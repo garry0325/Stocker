@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime
@@ -180,17 +181,28 @@ def plotBBand(bbandList, stockId):
 
 	plt.show()
 
+def plotStocks(stockIds, untilDate, trackbackDates=180):
+	if(type(stockIds) != list):
+		stockIds = [stockIds]
 
-date = datetime.datetime(2019, 11, 25)
-bband = calculateBBands(date, trackbackDates=180)
-bband = filterPriceHigherThanUpper(bband)
-bband = filterHighestPriceForDays(bband)
-bband = filterByMAandVolume(bband, date)
-
-for i in bband:
-	print(i)
-c = input('show plot (y/n)?')
-if(c == 'y'):
-	for i in bband:
+	bband = calculateBBands(untilDate, trackbackDates=trackbackDates)
+	for i in stockIds:
 		plotBBand(bband, i)
 
+
+if(sys.argv[1] == '0'):
+	date = datetime.datetime(2017, 7, 18)
+	bband = calculateBBands(date, trackbackDates=90)
+	bband = filterPriceHigherThanUpper(bband)
+	bband = filterHighestPriceForDays(bband)
+	bband = filterByMAandVolume(bband, date)
+
+	for i in bband:
+		print(i)
+	c = input('show plot (y/n)?')
+	if(c == 'y'):
+		for i in bband:
+			plotBBand(bband, i)
+
+elif(sys.argv[1] == '1'):
+	plotStocks('4739', datetime.datetime(2017, 7, 19), 90)

@@ -149,7 +149,7 @@ def plotBBand(bbandList, stockId):
 	for i in range(len(price)-1, -1, -1):
 		volume.append(stockDict[i][stockId].volume)
 	volume = np.array(volume)
-	lastDayVolume = volume[0]
+	lastDayVolume = volume[len(volume)-1]
 	
 	color = []
 	for i in range(0, len(price)-1):
@@ -196,13 +196,25 @@ if(sys.argv[1] == '0'):
 	bband = filterPriceHigherThanUpper(bband)
 	bband = filterHighestPriceForDays(bband)
 	bband = filterByMAandVolume(bband, date)
+	
+	d1 = stockInfo.generateStockPricesDictionaryByDate(datetime.datetime(2017, 7, 18))
+	d2 = stockInfo.generateStockPricesDictionaryByDate(datetime.datetime(2017, 8, 18))
 
 	for i in bband:
-		print(i)
+		profit = (d2[i].price - d1[i].price) * 100 / d1[i].price
+		print("%3d%%" % (profit), i)
 	c = input('show plot (y/n)?')
 	if(c == 'y'):
 		for i in bband:
 			plotBBand(bband, i)
 
+
 elif(sys.argv[1] == '1'):
-	plotStocks('4739', datetime.datetime(2017, 7, 19), 90)
+	while True:
+		c = input("id: ")
+		if(c == 'end'):
+			break
+		try:
+			plotStocks(c, datetime.datetime(2017, 8, 18), 90)
+		except:
+			continue

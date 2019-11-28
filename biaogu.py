@@ -61,7 +61,7 @@ def calculateBBands(date=datetime.datetime.now(),
 		
 			bbandList[stockItem].append(bband(stockList[stockItem][i], mean, mean + K * s, mean - K * s))
 	print("Latest date %d/%02d/%02d" % (latestDate.year, latestDate.month, latestDate.day))
-
+	
 	return bbandList
 
 def filterPriceHigherThanUpper(bbandList):
@@ -190,31 +190,59 @@ def plotStocks(stockIds, untilDate, trackbackDates=180):
 		plotBBand(bband, i)
 
 
-if(sys.argv[1] == '0'):
-	date = datetime.datetime(2017, 7, 18)
-	bband = calculateBBands(date, trackbackDates=90)
+def showFilteredStocksOnDate(date, trackbackDates=90):
+	bband = calculateBBands(date, trackbackDates=trackbackDates)
 	bband = filterPriceHigherThanUpper(bband)
 	bband = filterHighestPriceForDays(bband)
 	bband = filterByMAandVolume(bband, date)
 	
-	d1 = stockInfo.generateStockPricesDictionaryByDate(datetime.datetime(2017, 7, 18))
-	d2 = stockInfo.generateStockPricesDictionaryByDate(datetime.datetime(2017, 8, 18))
+	for i in bband:
+		print(i)
+	
+	c = input('show plot (y/n)?')
+	if(c == 'y'):
+		for i in bband:
+			plotBBand(bband, i)
+
+def evaluateFilteredStocksWithProfit(evaluateDate, sellDate, trackbackDates=90):
+	bband = calculateBBands(evaluateDate, trackbackDates=trackbackDates)
+	bband = filterPriceHigherThanUpper(bband)
+	bband = filterHighestPriceForDays(bband)
+	bband = filterByMAandVolume(bband, evaluateDate)
+
+	buyDate = evaluateDate + relativedelta(days=1)
+	d1 = stockInfo.generateStockPricesDictionaryByDate(buyDate)
+	d2 = stockInfo.generateStockPricesDictionaryByDate(sellDate)
 
 	for i in bband:
 		profit = (d2[i].price - d1[i].price) * 100 / d1[i].price
-		print("%3d%%" % (profit), i)
+		
+		averageWidth = 0
+		for j in range(30):
+			averageWidth = averageWidth + (bband[i][j].upper - bband[i][j].MA) * 100 / bband[i][j].MA
+		averageWidth = averageWidth / 30
+		
+		print("%3d%% %s %.1f%%" % (profit, i, averageWidth))
+	
 	c = input('show plot (y/n)?')
 	if(c == 'y'):
 		for i in bband:
 			plotBBand(bband, i)
 
 
+if(sys.argv[1] == '0'):
+	showFilteredStocksOnDate(datetime.datetime(2019, 11, 19))
+
 elif(sys.argv[1] == '1'):
+	evaluateFilteredStocksWithProfit(datetime.datetime(2019, 5, 18), datetime.datetime(2019, 6, 18))
+
+
+elif(sys.argv[1] == '2'):
 	while True:
 		c = input("id: ")
 		if(c == 'end'):
 			break
 		try:
-			plotStocks(c, datetime.datetime(2017, 8, 18), 90)
+			plotStocks(c, datetime.datetime(2019, 6, 18), 90)
 		except:
 			continue

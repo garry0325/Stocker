@@ -197,7 +197,11 @@ def showFilteredStocksOnDate(date, trackbackDates=90):
 	bband = filterByMAandVolume(bband, date)
 	
 	for i in bband:
-		print(i)
+		averageWidth = 0
+		for j in range(30):
+			averageWidth = averageWidth + (bband[i][j].upper - bband[i][j].MA) * 100 / bband[i][j].MA
+		averageWidth = averageWidth / 30
+		print("%s %.1f%%" % (i, averageWidth))
 	
 	c = input('show plot (y/n)?')
 	if(c == 'y'):
@@ -231,10 +235,10 @@ def evaluateFilteredStocksWithProfit(evaluateDate, sellDate, trackbackDates=90):
 
 
 if(sys.argv[1] == '0'):
-	showFilteredStocksOnDate(datetime.datetime(2019, 11, 19))
+	showFilteredStocksOnDate(datetime.datetime(2019, 11, 26))
 
 elif(sys.argv[1] == '1'):
-	evaluateFilteredStocksWithProfit(datetime.datetime(2019, 5, 18), datetime.datetime(2019, 6, 18))
+	evaluateFilteredStocksWithProfit(datetime.datetime(2019, 11, 19), datetime.datetime(2019, 11, 28))
 
 
 elif(sys.argv[1] == '2'):
@@ -243,6 +247,6 @@ elif(sys.argv[1] == '2'):
 		if(c == 'end'):
 			break
 		try:
-			plotStocks(c, datetime.datetime(2019, 6, 18), 90)
+			plotStocks(c, datetime.datetime(2019, 11, 28), 90)
 		except:
 			continue

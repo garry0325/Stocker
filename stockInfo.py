@@ -120,7 +120,7 @@ def updateStockPricesDatabase(fromDate=datetime.datetime(2013, 1, 1)):
 	
 	
 	if(toDate.date() == datetime.datetime.now().date()):
-		if(datetime.datetime.now().hour <= 17):	# today's stock prices be released after 1700
+		if(datetime.datetime.now().hour < 17):	# today's stock prices be released after 1600
 			print("toDate changed")
 			toDate = toDate - relativedelta(days=1)
 	date = toDate
@@ -319,25 +319,4 @@ def listAllStocksProfitsByDates(date1, date2, threshold=20):
 if __name__ == "__main__":
 	
 	if(sys.argv[1] == 'd'):
-		error = 5
-		while error > 0:
-			try:
-				updateStockPricesDatabase()
-			except:
-				error = error - 1
-				time.sleep(10)
-				continue
-
-	'''
-	while True:
-		c = input("stock id: ")
-		s = generateStockPricesDictionaryByDate(datetime.datetime(year = 2019, month = 4, day = 11))
-		s[c].summerize()
-	'''
-	
-	'''
-	s = generateMovingAverageDictionaryForAllStocksByDate(datetime.datetime(2019, 5, 11), 20, 2)
-	while True:
-		c = input('id: ')
-		print(s[c])
-	'''
+		updateStockPricesDatabase()

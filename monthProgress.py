@@ -328,8 +328,8 @@ def evaluation(stockList, buyDate, sellDate):
 
 
 def prediction(M, N, buyDate=datetime.datetime.now(),
-			   price=10,
-			   volume=10,
+			   price=10.0,
+			   volume=1000,
 			   dyield=(0.1, 3),
 			   peratio=(0.1, 100),
 			   pbratio=0,
@@ -463,40 +463,58 @@ def evaluateCertainStock(stockIds, buyDate, sellDate=None):
 			print("%3.2f%%\t%5.2f\t%4.2f\t%3d%%\t%3d%%\t%s\t%6s\t%7.2f\t%10d\t%.2f\t%.3f%%" % (buy[stockItem].dyield, buy[stockItem].peratio, buy[stockItem].pbratio, YoY, MoM, stockItem, buy[stockItem].name, buy[stockItem].price, buy[stockItem].volume, MA, MAProgress))
 
 		print("\nTotal %d stocks\n" % (count))
-
+		
+def evaluateStocksWithBuyDateAndSellDate(buyDate, sellDate,
+											M=3, N=4,
+											price=10.0,
+											volume=1000,
+											dyield=(0.1, 20),
+											peratio=(0.1, 100),
+											pbratio=0,
+											revenue=(10, 100),
+											YoY=(10, 100),
+											MA=20,
+											extraDays=2,
+											shouldBeStrictlyIncreasing=True,
+											interval=(0.6, 25)):
+	
+	readMonthlyRevenueFromDictionary()
+		
+	result = findStocksWithStrictlyIncreasingMonthlyAveragedRevenue(M, N)
+	
+	buyDatePrices = stockInfo.generateStockPricesDictionaryByDate(buyDate)
+	sellDatePrices = stockInfo.generateStockPricesDictionaryByDate(sellDate)
+	
+	result = filtering(result, buyDatePrices, price, volume, dyield, peratio, pbratio, revenue, YoY)
+	result = filterUsingMA(result, buyDate, MA, extraDays, shouldBeStrictlyIncreasing, interval)
+	
+	evaluation(result, buyDatePrices, sellDatePrices)
+	
+	if(buyDatePrices['2330'].date <= datetime.datetime(endDate.year, endDate.month, 10)):
+		print("Warning: Buy date is prior to revenue releasing date\n")
 
 
 if __name__ == "__main__":
 
 	if(sys.argv[1] == '0'):
-		generateMonthlyRevenueToDictionary(M=M, N=N, end=datetime.datetime(year=2019, month=8, day=1))
+		generateMonthlyRevenueToDictionary(M=M, N=N, end=datetime.datetime(year=2019, month=11, day=1))
 
 	elif(sys.argv[1] == '1'):
+		evaluateStocksWithBuyDateAndSellDate(datetime.datetime(2019, 12, 11), datetime.datetime(2020, 1, 3),
+											M=3, N=4,
+											price=10.0,
+											volume=1000,
+											dyield=(0.1, 20),
+											peratio=(0.1, 100),
+											pbratio=0,
+											revenue=(10, 100),
+											YoY=(10, 100),
+											MA=20,
+											extraDays=2,
+											shouldBeStrictlyIncreasing=True,
+											interval=(0.6, 25))
 		
-		readMonthlyRevenueFromDictionary()
-		
-		result = findStocksWithStrictlyIncreasingMonthlyAveragedRevenue(M, N)
-		
-		buyDate = endDate + relativedelta(months=1)
-		buyDate = datetime.datetime(buyDate.year, buyDate.month, 11)
-		
-		sellDate = endDate + relativedelta(months=2)
-		sellDate = datetime.datetime(sellDate.year, sellDate.month, 5)
 
-		buyDatePrices = stockInfo.generateStockPricesDictionaryByDate(buyDate)
-		sellDatePrices = stockInfo.generateStockPricesDictionaryByDate(sellDate)
-
-		
-		result = filtering(result, buyDatePrices, 10.0, 1000, dyield=(0.1, 20), peratio=(0.1, 100), revenue=(10, 100), YoY=(10, 100)) # best from 2019-06 monthly revenue, M=3, N=4
-		result = filterUsingMA(result, buyDate, 20, 2, True, interval=(0.6, 25))
-		
-		'''
-		result = filtering(result, buyDatePrices, 10.0, 500, dyield=(0.01, 20), peratio=(0.01, 200), pbratio=(0.01, 100), revenue=(1, 300), YoY=(0.01, 400)) # best from 2019-06 monthly revenue, M=3, N=4
-		result = filterUsingMA(result, buyDate, 20, 2, False)
-		'''
-		
-		
-		evaluation(result, buyDatePrices, sellDatePrices)
 
 	elif(sys.argv[1] == '4'):
 		
@@ -541,7 +559,7 @@ if __name__ == "__main__":
 	# Rank by YoY, if MA20 progress > 0.8 (maybe just filter it), then take it.
 
 	elif(sys.argv[1] == '3'):
-		prediction(M, N,
+		prediction(M, N, buyDate=datetime.datetime(2019, 12, 16),
 				   price=10.0,
 				   volume=1000,
 				   dyield=(0.1, 20),
@@ -554,4 +572,4 @@ if __name__ == "__main__":
 				   interval=(0.6, 25))
 
 	elif(sys.argv[1] == '5'):
-		evaluateCertainStock(['1598', '2312', '3437', '9941', '2006', '2103', '2303', '2332', '3147', '5213', '6223'], datetime.datetime(2019, 11, 25))
+		evaluateCertainStock(['3131', '3227', '3413', '6538'], datetime.datetime(2019, 12, 30))

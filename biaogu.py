@@ -175,8 +175,11 @@ def plotBBand(bbandList, stockId):
 	plt.bar(l, volume, color=color, alpha=0.8)
 	plt.ylim(ylim)
 	
-	plt.plot(l, np.array(ma)*1.1, c='blue', linewidth=0.7, alpha=0.4)
-	plt.plot(l, np.array(ma)*0.9, c='blue', linewidth=0.7, alpha=0.4)
+	limit = price.copy()
+	limit.pop()
+	limit.insert(0, limit[0])
+	plt.plot(l, np.array(limit)*1.1, c='blue', linewidth=0.7, alpha=0.4)
+	plt.plot(l, np.array(limit)*0.9, c='blue', linewidth=0.7, alpha=0.4)
 	
 	plt.title(stockId + ' ' + stockDict[0][stockId].name, fontproperties=font)
 	plt.ylabel('Price')
@@ -238,10 +241,10 @@ def evaluateFilteredStocksWithProfit(evaluateDate, sellDate, trackbackDates=90):
 
 
 if(sys.argv[1] == '0'):
-	showFilteredStocksOnDate(datetime.datetime(2019, 11, 8))
+	showFilteredStocksOnDate(datetime.datetime(2019, 11, 25))
 
 elif(sys.argv[1] == '1'):
-	evaluateFilteredStocksWithProfit(datetime.datetime(2019, 11, 6), datetime.datetime(2019, 11, 13))
+	evaluateFilteredStocksWithProfit(datetime.datetime(2019, 12, 9), datetime.datetime(2019, 12, 13))
 
 
 elif(sys.argv[1] == '2'):
@@ -250,7 +253,7 @@ elif(sys.argv[1] == '2'):
 		if(c == 'end'):
 			break
 		try:
-			plotStocks(c, datetime.datetime(2019, 11, 22), 200)
+			plotStocks(c, datetime.datetime(2020, 1, 2), 90)
 		except:
 			continue
 

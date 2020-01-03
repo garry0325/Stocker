@@ -276,7 +276,10 @@ elif(sys.argv[1] == '3'):
 	for item in stock:
 		maxPrice = max(stock[item])
 		minPrice = min(stock[item])
-
-		width = (maxPrice - minPrice) / ((maxPrice + minPrice) / 2)
-		if(width <= 0.3):
-			print(item, width)
+		averagePrice = sum(stock[item]) / len(stock[item])
+		
+		upwidth = (maxPrice - averagePrice) / averagePrice * 100
+		downwidth = (averagePrice - minPrice) / averagePrice * 100
+		
+		if(upwidth <= 7 and downwidth <= 7):
+			print(item, upwidth, downwidth)

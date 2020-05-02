@@ -320,3 +320,7 @@ if __name__ == "__main__":
 	
 	if(sys.argv[1] == 'd'):
 		updateStockPricesDatabase()
+
+	elif(sys.argv[1] == '1'):
+		d = generateStockPricesDictionaryByDate(datetime.datetime(2013, 11, 29))
+		d['4137'].summerize()

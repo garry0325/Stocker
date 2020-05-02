@@ -281,5 +281,5 @@ elif(sys.argv[1] == '3'):
 		upwidth = (maxPrice - averagePrice) / averagePrice * 100
 		downwidth = (averagePrice - minPrice) / averagePrice * 100
 		
-		if(upwidth <= 7 and downwidth <= 7):
+		if(upwidth <= 9 and downwidth <= 9):
 			print(item, upwidth, downwidth)

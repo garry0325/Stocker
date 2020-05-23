@@ -158,7 +158,7 @@ def findStocksWithStrictlyIncreasingMonthlyAveragedRevenue(m, n):
 			progressMoM = (monthRevenue[0] - monthRevenue[1]) * 100 / monthRevenue[1]
 			
 			result.append([stockIdStr, progress, progressYoY, progressMoM])
-
+			
 	print("%d stocks found with strictly increasing revenue with M=%d, N=%d" % (len(result), m, n))
 	return result	# list of ['2330', '23.332', YoY, MoM]
 
@@ -226,6 +226,7 @@ def filtering(stockList, stockDictByDate, price=0, volume=0, dyield=0, peratio=0
 			for stock in stockListCopy:
 				if(stockDictByDate[stock[0]].pbratio > pbratio):
 					stockList.remove(stock)
+					
 	if(revenue != 0):
 		stockListCopy = stockList.copy()
 		if(type(revenue) == tuple or type(revenue) == list):
@@ -375,7 +376,7 @@ def prediction(M, N, buyDate=datetime.datetime.now(),
 			
 	print("\n%d stocks found\n" % (count))
 
-def evaluateCertainStock(stockIds, buyDate, sellDate=None):
+def evaluateCertainStock(stockIds, buyDate, sellDate=None): # BUGS: using buyDate's month to generate revenue sheet
 	if(type(stockIds) != list):
 		stockIds = [stockIds]
 	
@@ -479,7 +480,7 @@ def evaluateStocksWithBuyDateAndSellDate(buyDate, sellDate,
 											interval=(0.6, 25)):
 	
 	readMonthlyRevenueFromDictionary()
-		
+	
 	result = findStocksWithStrictlyIncreasingMonthlyAveragedRevenue(M, N)
 	
 	buyDatePrices = stockInfo.generateStockPricesDictionaryByDate(buyDate)
@@ -496,11 +497,14 @@ def evaluateStocksWithBuyDateAndSellDate(buyDate, sellDate,
 
 if __name__ == "__main__":
 
-	if(sys.argv[1] == '0'):
-		generateMonthlyRevenueToDictionary(M=M, N=N, end=datetime.datetime(year=2019, month=11, day=1))
+	if(sys.argv[1] == '0'):	# Generate revenue cache
+		revenueDateString = sys.argv[2]
+		revenueDate = datetime.datetime.strptime(revenueDateString, '%Y%m')
+		
+		generateMonthlyRevenueToDictionary(M=M, N=N, end=datetime.datetime(year=revenueDate.year, month=revenueDate.month, day=1))
 
 	elif(sys.argv[1] == '1'):
-		evaluateStocksWithBuyDateAndSellDate(datetime.datetime(2019, 12, 11), datetime.datetime(2020, 1, 3),
+		evaluateStocksWithBuyDateAndSellDate(datetime.datetime(2020, 4, 15), datetime.datetime(2020, 5, 11),
 											M=3, N=4,
 											price=10.0,
 											volume=1000,
@@ -559,7 +563,7 @@ if __name__ == "__main__":
 	# Rank by YoY, if MA20 progress > 0.8 (maybe just filter it), then take it.
 
 	elif(sys.argv[1] == '3'):
-		prediction(M, N, buyDate=datetime.datetime(2019, 12, 16),
+		prediction(M, N, buyDate=datetime.datetime(2020, 5, 15),
 				   price=10.0,
 				   volume=1000,
 				   dyield=(0.1, 20),
@@ -572,4 +576,5 @@ if __name__ == "__main__":
 				   interval=(0.6, 25))
 
 	elif(sys.argv[1] == '5'):
-		evaluateCertainStock(['3131', '3227', '3413', '6538'], datetime.datetime(2019, 12, 30))
+		# BUG WITH THIS FUNCTION
+		evaluateCertainStock(['3131', '6538', '3227', '3413', '3661', '6683'], datetime.datetime(2020, 5, 11), datetime.datetime(2020, 5, 15))

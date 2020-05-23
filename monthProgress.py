@@ -504,7 +504,10 @@ if __name__ == "__main__":
 		generateMonthlyRevenueToDictionary(M=M, N=N, end=datetime.datetime(year=revenueDate.year, month=revenueDate.month, day=1))
 
 	elif(sys.argv[1] == '1'):
-		evaluateStocksWithBuyDateAndSellDate(datetime.datetime(2020, 4, 15), datetime.datetime(2020, 5, 11),
+		buyDate = datetime.datetime.strptime(sys.argv[2], '%Y%m%d')
+		sellDate = datetime.datetime.strptime(sys.argv[3], '%Y%m%d')
+		
+		evaluateStocksWithBuyDateAndSellDate(datetime.datetime(buyDate.year, buyDate.month, buyDate.day), datetime.datetime(sellDate.year, sellDate.month, sellDate.day),
 											M=3, N=4,
 											price=10.0,
 											volume=1000,

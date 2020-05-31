@@ -492,7 +492,7 @@ def evaluateStocksWithBuyDateAndSellDate(buyDate, sellDate,
 	evaluation(result, buyDatePrices, sellDatePrices)
 	
 	if(buyDatePrices['2330'].date <= datetime.datetime(endDate.year, endDate.month, 10)):
-		print("Warning: Buy date is prior to revenue releasing date\n")
+		print("!!!!!!! Warning: Buy date is prior to revenue releasing date\n")
 
 
 if __name__ == "__main__":

@@ -249,7 +249,7 @@ def filtering(stockList, stockDictByDate, price=0, volume=0, dyield=0, peratio=0
 				if(stock[2] < YoY):
 					stockList.remove(stock)
 
-	print("%d stocks found after filtering" % (len(stockList)))
+	print("%d stocks found after basic filtering" % (len(stockList)))
 
 	return stockList
 

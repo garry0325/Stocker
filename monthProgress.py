@@ -565,8 +565,17 @@ if __name__ == "__main__":
 	# peratio 0.1-100, revenue 10-100, YoY 10-100.
 	# Rank by YoY, if MA20 progress > 0.8 (maybe just filter it), then take it.
 
-	elif(sys.argv[1] == '3'):
-		prediction(M, N, buyDate=datetime.datetime(2020, 5, 15),
+	elif(sys.argv[1] == '3' or sys.argv[1] == 'p'):
+		if(len(sys.argv) > 2):
+			queryBuyDateString = sys.argv[2]
+			queryBuyDate = datetime.datetime.strptime(queryBuyDateString, '%Y%m%d')
+			print("buyDate using %d/%02d/%02d" % (queryBuyDate.year, queryBuyDate.month, queryBuyDate.day))
+			
+		elif(len(sys.argv) == 2):
+			queryBuyDate = datetime.datetime.now()
+			print("buyDate using today %d/%02d/%02d" % (queryBuyDate.year, queryBuyDate.month, queryBuyDate.day))
+			
+		prediction(M, N, buyDate=datetime.datetime(queryBuyDate.year, queryBuyDate.month, queryBuyDate.day),
 				   price=10.0,
 				   volume=1000,
 				   dyield=(0.1, 20),

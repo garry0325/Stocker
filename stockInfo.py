@@ -321,6 +321,25 @@ if __name__ == "__main__":
 	if(sys.argv[1] == 'd'):
 		updateStockPricesDatabase()
 
-	elif(sys.argv[1] == '1'):
-		d = generateStockPricesDictionaryByDate(datetime.datetime(2013, 11, 29))
-		d['4137'].summerize()
+	else:
+		queryStockId = None
+		queryStockDate = None
+		
+		if(len(sys.argv) == 2):
+			queryStockDate = datetime.datetime.now()
+			queryStockId = sys.argv[1]
+			
+		elif(len(sys.argv) == 3):
+			try:
+				queryStockDate = datetime.datetime.strptime(sys.argv[1], '%Y%m%d')
+				queryStockId = sys.argv[2]
+			except:
+				try:
+					queryStockDate = datetime.datetime.strptime(sys.argv[2], '%Y%m%d')
+					queryStockId = sys.argv[1]
+				except:
+					print("input error")
+					sys.exit(0)
+		
+		d = generateStockPricesDictionaryByDate(queryStockDate)
+		d[queryStockId].summerize()

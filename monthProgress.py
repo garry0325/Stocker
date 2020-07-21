@@ -587,6 +587,20 @@ if __name__ == "__main__":
 				   shouldBeStrictlyIncreasing=True,
 				   interval=(0.6, 25))
 
-	elif(sys.argv[1] == '5'):
-		# BUG WITH THIS FUNCTION
-		evaluateCertainStock(['3131', '6538', '3227', '3413', '3661', '6683'], datetime.datetime(2020, 5, 11), datetime.datetime(2020, 5, 15))
+	elif(sys.argv[1] == '5' or sys.argv[1] == 'e'):
+		if(len(sys.argv) >= 5):
+			evaluateBuyDate = None
+			evaluateSellDate = None
+			evaluateStocks = []
+			for i in range(2, len(sys.argv)):
+				try:
+					cmdDate = datetime.datetime.strptime(sys.argv[i], '%Y%m%d')
+					if(evaluateBuyDate == None):
+						evaluateBuyDate = cmdDate
+					else:
+						evaluateSellDate = cmdDate
+				except:
+					evaluateStocks.append(sys.argv[i])
+					
+			# BUG WITH THIS FUNCTION
+			evaluateCertainStock(evaluateStocks, evaluateBuyDate, evaluateSellDate)

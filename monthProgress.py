@@ -421,7 +421,8 @@ def evaluateCertainStock(stockIds, buyDate, sellDate=None): # BUGS: using buyDat
 		buy = stockInfo.generateStockPricesDictionaryByDate(buyDate)
 		sell = stockInfo.generateStockPricesDictionaryByDate(sellDate)
 		buyMA = stockInfo.generateMovingAverageDictionaryForAllStocksByDate(buyDate, MA=20, extraDays=2)
-
+		
+		buyDate = buy['2330'].date
 		print("\n獲利\t殖利\t本益\t淨比\tYoY\tMoM\t代號\t公司\t股價%d/%02d/%02d\t股價%d/%02d/%02d\t成交量\tMA20\tMA20Progress" % (buyDate.year, buyDate.month, buyDate.day, sellDate.year, sellDate.month, sellDate.day))
 		print("-----------------------------------------------------------------------")
 		
@@ -588,7 +589,7 @@ if __name__ == "__main__":
 				   interval=(0.6, 25))
 
 	elif(sys.argv[1] == '5' or sys.argv[1] == 'e'):
-		if(len(sys.argv) >= 5):
+		if(len(sys.argv) >= 4):
 			evaluateBuyDate = None
 			evaluateSellDate = None
 			evaluateStocks = []

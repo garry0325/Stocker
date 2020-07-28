@@ -115,6 +115,8 @@ def updateStockPricesDatabase(fromDate=datetime.datetime(2013, 1, 1)):
 	databasePath = 'stockPrices/'
 	urlPricetse = 'https://www.twse.com.tw/exchangeReport/MI_INDEX?response=json&date='
 	urlPerformancetse = 'https://www.twse.com.tw/exchangeReport/BWIBBU_d?response=json&date='
+	
+	# consider using https://www.tpex.org.tw/web/stock/aftertrading/daily_close_quotes/stk_quote_result.php?l=zh-tw&d=109/07/10&se=EW
 	urlPriceotc = 'https://www.tpex.org.tw/web/stock/aftertrading/otc_quotes_no1430/stk_wn1430_result.php?l=zh-tw&d='
 	urlPerformanceotc = 'https://www.tpex.org.tw/web/stock/aftertrading/peratio_analysis/pera_result.php?l=zh-tw&d='
 	
@@ -263,7 +265,7 @@ def updateStockPricesDatabase(fromDate=datetime.datetime(2013, 1, 1)):
 
 		with open(databasePath + dateFormat, 'w') as f:
 			json.dump(prices, f)
-		print("%s written (%d stocks, %d errors)" % (dateFormat, len(prices), errors))
+		print("%s written (%d stocks, %d errors, %d bytes)" % (dateFormat, len(prices), errors, os.path.getsize(databasePath + dateFormat)))
 
 
 		date = date - relativedelta(days=1)

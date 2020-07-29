@@ -376,11 +376,15 @@ def prediction(M, N, buyDate=datetime.datetime.now(),
 			
 	print("\n%d stocks found\n" % (count))
 
-def evaluateCertainStock(stockIds, buyDate, sellDate=None): # BUGS: using buyDate's month to generate revenue sheet
+def evaluateCertainStock(stockIds, buyDate, sellDate=None):
 	if(type(stockIds) != list):
 		stockIds = [stockIds]
 	
-	now = buyDate
+	compareDate = datetime.datetime(buyDate.year, buyDate.month, 11)
+	if(buyDate < compareDate):
+		now = buyDate - relativedelta(months=2)
+	else:
+		now = buyDate - relativedelta(months=1)
 	
 	revenue = {}	# should be initialized in order to generate multiple rounds within an execution
 	for stockItem in stockIds:
@@ -603,5 +607,4 @@ if __name__ == "__main__":
 				except:
 					evaluateStocks.append(sys.argv[i])
 					
-			# BUG WITH THIS FUNCTION
 			evaluateCertainStock(evaluateStocks, evaluateBuyDate, evaluateSellDate)

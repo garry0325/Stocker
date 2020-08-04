@@ -434,6 +434,8 @@ def evaluateCertainStock(stockIds, buyDate, sellDate=None):
 		count = 0
 		for stockItem in revenue:
 			try:
+				if(revenue[stockItem][0] == 0 or revenue[stockItem][1] == 0 or revenue[stockItem][2] == 0):
+					continue
 				profit = (sell[stockItem].price - buy[stockItem].price) * 100 / buy[stockItem].price
 				MoM = (revenue[stockItem][0] - revenue[stockItem][1]) * 100 / revenue[stockItem][1]
 				YoY = (revenue[stockItem][0] - revenue[stockItem][2]) * 100 / revenue[stockItem][2]

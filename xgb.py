@@ -8,7 +8,7 @@ import sys
 import pickle
 
 stockId = '2330'
-startTrainDate = datetime.date(2017, 1, 1)
+startTrainDate = datetime.date(2018, 1, 1)
 endTrainDate = datetime.date(2019, 12, 31)
 predictDays = 3
 startPredictDate = datetime.date(2019, 9, 1)
